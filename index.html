@@ -1,259 +1,385 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>הספירה לאחור לחתונה של אביטל ודוד</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #fcfbf7;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ספירת הימים של אביטל</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* אפקט הניצוצות ברקע */
-        .sparkle {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: radial-gradient(circle, #ffe89e 0%, #b89742 100%);
-            border-radius: 50%;
-            pointer-events: none;
-            box-shadow: 0 0 10px #ffe17d, 0 0 20px #b89742;
-            animation: fadeOut 0.8s ease-out forwards;
-            z-index: 9999;
-        }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
 
-        @keyframes fadeOut {
-            0% { transform: scale(1) translateY(0); opacity: 1; }
-            100% { transform: scale(0.2) translateY(-20px); opacity: 0; }
-        }
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: #0d0d0f;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, #2a1a0a 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, #1a0f00 0%, transparent 60%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.5vh 3vw 1.5vh;
+    height: 100dvh;
+    color: #f0e0c0;
+  }
 
-        .container {
-            text-align: center;
-            background: #ffffff;
-            padding: 50px 40px 60px 40px; /* הגדלנו מעט את המרווח למטה בשביל הפס */
-            border-radius: 20px;
-            box-shadow: 0 12px 40px rgba(184, 151, 66, 0.1);
-            border: 1px solid #eaddca;
-            max-width: 550px;
-            width: 90%;
-            position: relative;
-            z-index: 10;
-            overflow: hidden; /* שומר שהפס לא יצא מהפינות המעוגלות */
-        }
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    flex-shrink: 0;
+  }
 
-        /* מד התקדמות (Progress Bar) בתחתית הכרטיס */
-        .progress-container {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 8px; /* עבה במעט כדי שיהיה ברור לעין */
-            background-color: #f1e6cd;
-        }
+  .logo {
+    font-size: clamp(1.1rem, 3vh, 1.9rem);
+    font-weight: 700;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, #f5d98b 0%, #c8860a 50%, #f5d98b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.4vh;
+  }
 
-        .progress-bar {
-            height: 100%;
-            width: 0%; /* מתחיל ריק ומתמלא ככל שהזמן עובר */
-            background: linear-gradient(90deg, #b89742, #ffe17d, #b89742);
-            box-shadow: 0 -2px 8px rgba(184, 151, 66, 0.3);
-            transition: width 0.5s ease;
-        }
+  .logo::before, .logo::after {
+    content: '✦';
+    font-size: 0.6em;
+    margin: 0 0.5em;
+    opacity: 0.6;
+  }
 
-        /* אפקט אינטראקטיבי לשמות */
-        .names-container span {
-            display: inline-block;
-            font-size: 2.8rem;
-            color: #b89742;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            cursor: default;
-        }
+  .logo-footer {
+    font-size: clamp(0.7rem, 1.8vh, 1.1rem);
+    letter-spacing: 2px;
+    margin-bottom: 0;
+  }
 
-        .names-container span:hover {
-            transform: scale(1.15) translateY(-5px);
-            color: #d4af37;
-            text-shadow: 0 4px 15px rgba(184, 151, 66, 0.4);
-        }
+  .eyebrow {
+    font-size: clamp(0.6rem, 1.6vh, 0.8rem);
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #8a6a3a;
+    margin-bottom: 0.5vh;
+  }
 
-        .ampersand {
-            margin: 0 15px;
-            font-size: 2.2rem !important;
-            color: #666 !important;
-        }
+  header h1 {
+    font-size: clamp(1.1rem, 3.8vh, 2.2rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, #f5d98b 0%, #e8a830 50%, #f5d98b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 1px;
+    line-height: 1.2;
+  }
 
-        .sub-title {
-            font-size: 1.3rem;
-            color: #666;
-            margin-bottom: 5px;
-            letter-spacing: 1px;
-        }
+  header p {
+    font-size: clamp(0.65rem, 1.8vh, 0.95rem);
+    font-weight: 300;
+    color: #7a6040;
+    margin-top: 0.4vh;
+    letter-spacing: 1px;
+  }
 
-        .date-hebrew {
-            font-size: 1.2rem;
-            color: #8c763d;
-            font-weight: 500;
-            margin-bottom: 35px;
-        }
+  /* thin gold divider */
+  .divider {
+    width: clamp(40px, 8vw, 80px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #c8a84b, transparent);
+    margin: 1vh auto 0;
+  }
 
-        .countdown {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1vh 1.2vw;
+    width: 100%;
+    max-width: min(96vw, 155vh);
+    flex: 1;
+    align-content: center;
+    justify-items: center;
+  }
 
-        /* קוביות הזמן */
-        .time-box {
-            background: #fdfaf2;
-            border: 1px solid #f1e6cd;
-            padding: 18px;
-            border-radius: 12px;
-            width: 80px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: repeat(5, 1fr); gap: 1.2vh 2vw; }
+  }
 
-        .time-box:hover {
-            transform: scale(1.08);
-            box-shadow: 0 6px 15px rgba(184, 151, 66, 0.15);
-            border-color: #b89742;
-        }
+  /* ── BULB CARD ── */
+  .bulb-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5vh;
+    width: 100%;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: clamp(6px, 1.2vh, 12px);
+    padding: 0.8vh 0.4vw 0.6vh;
+    transition: border-color 0.4s;
+  }
 
-        .time-num {
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: #222;
-            display: block;
-        }
+  .bulb-wrap.lit {
+    background: rgba(245, 180, 40, 0.05);
+    border-color: rgba(245, 180, 40, 0.18);
+  }
 
-        .time-label {
-            font-size: 0.9rem;
-            color: #777;
-            margin-top: 5px;
-            display: block;
-        }
+  .bulb-wrap span {
+    font-size: clamp(0.5rem, 1.3vh, 0.78rem);
+    font-weight: 400;
+    color: #3a3020;
+    letter-spacing: 1px;
+  }
 
-        .footer-message {
-            margin-top: 35px;
-            font-size: 1.2rem;
-            color: #555;
-            font-style: italic;
-        }
-    </style>
+  .bulb-wrap.lit span { color: #c8a84b; }
+
+  .bulb-wrap svg {
+    width: 100%;
+    height: auto;
+    max-height: 9.5vh;
+  }
+
+  /* ── SVG COLORS ── */
+  .bulb-glass     { fill: #1c1c1e; }
+  .bulb-shine     { fill: rgba(255,255,255,0.04); }
+  .bulb-filament  { stroke: #2e2e2e; }
+  .bulb-base      { fill: #161616; }
+  .bulb-base-line { stroke: #252525; }
+  .bulb-cap       { fill: #111; }
+
+  .lit .bulb-glass     { fill: url(#litGrad); }
+  .lit .bulb-shine     { fill: rgba(255,255,255,0.22); }
+  .lit .bulb-filament  { stroke: #fff8c0; }
+  .lit .bulb-base      { fill: #7a6030; }
+  .lit .bulb-base-line { stroke: #c8a84b; }
+  .lit .bulb-cap       { fill: #5a4520; }
+
+  .lit svg {
+    filter:
+      drop-shadow(0 0 5px #f5c84290)
+      drop-shadow(0 0 14px #f5a50060)
+      drop-shadow(0 0 28px #f5a50030);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeOn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .lit svg {
+    opacity: 0;
+    animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards;
+    animation-delay: calc(var(--i) * 0.055s);
+  }
+
+  @keyframes pulse {
+    0%, 100% { filter: drop-shadow(0 0 5px #f5c84290) drop-shadow(0 0 14px #f5a50060) drop-shadow(0 0 28px #f5a50030); }
+    50%       { filter: drop-shadow(0 0 10px #f5c842cc) drop-shadow(0 0 26px #f5a500a0) drop-shadow(0 0 50px #f5a50050); }
+  }
+
+  .today svg {
+    animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards,
+               pulse 2.2s ease-in-out calc(var(--i) * 0.055s + 1s) infinite;
+  }
+
+  .today .bulb-wrap-inner {
+    position: relative;
+  }
+
+  @keyframes weddingGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px #fff8c0cc) drop-shadow(0 0 22px #f5c842aa) drop-shadow(0 0 45px #f5a50066); }
+    50%       { filter: drop-shadow(0 0 16px #ffffffee) drop-shadow(0 0 38px #f5c842cc) drop-shadow(0 0 70px #f5a500aa); }
+  }
+
+  .wedding-day .lit svg {
+    animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards,
+               weddingGlow 1.6s ease-in-out calc(var(--i) * 0.04s + 1s) infinite;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: min(96vw, 155vh);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-text {
+    font-size: clamp(0.5rem, 1.3vh, 0.72rem);
+    font-weight: 300;
+    color: #2e2416;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  /* ── COUNTDOWN TIMER ── */
+  .timer {
+    display: flex;
+    gap: clamp(6px, 1.2vw, 16px);
+    align-items: flex-end;
+  }
+
+  .timer-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .timer-num {
+    font-size: clamp(1rem, 2.8vh, 1.8rem);
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(160deg, #f5d98b, #c8860a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 2ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer-label {
+    font-size: clamp(0.45rem, 1.1vh, 0.62rem);
+    font-weight: 300;
+    color: #5a4a2a;
+    letter-spacing: 1px;
+  }
+
+  .timer-sep {
+    font-size: clamp(0.9rem, 2.4vh, 1.5rem);
+    font-weight: 300;
+    color: #3a2e18;
+    padding-bottom: 0.3vh;
+    line-height: 1;
+  }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <div class="names-container">
-        <span>אביטל</span>
-        <span class="ampersand">&</span>
-        <span>דוד</span>
-    </div>
-    
-    <div class="sub-title">מתחתנים לעת שקיעה</div>
-    <div class="date-hebrew">יום ראשון, כ"ו באב ה'תש"ו | 9.08.2026</div>
+<header>
+  <div class="logo">דוד &amp; אביטל</div>
+  <div class="eyebrow">countdown</div>
+  <h1 id="title">טוענת...</h1>
+  <p id="subtitle"></p>
+  <div class="divider"></div>
+</header>
 
-    <div class="countdown" id="countdown">
-        <div class="time-box">
-            <span class="time-num" id="seconds">00</span>
-            <span class="time-label">שניות</span>
-        </div>
-        <div class="time-box">
-            <span class="time-num" id="minutes">00</span>
-            <span class="time-label">דקות</span>
-        </div>
-        <div class="time-box">
-            <span class="time-num" id="hours">00</span>
-            <span class="time-label">שעות</span>
-        </div>
-        <div class="time-box">
-            <span class="time-num" id="days">00</span>
-            <span class="time-label">ימים</span>
-        </div>
-    </div>
+<div class="grid" id="grid"></div>
 
-    <div class="footer-message" id="wedding-message">נפגש בשקיעה...</div>
-
-    <div class="progress-container">
-        <div class="progress-bar" id="progressBar"></div>
-    </div>
-</div>
+<footer>
+  <div class="logo logo-footer">דוד &amp; אביטל</div>
+  <span class="footer-text">כל נורה היא יום של ציפייה</span>
+  <div class="timer" id="timer">
+    <div class="timer-unit"><span class="timer-num" id="t-secs">--</span><span class="timer-label">שניות</span></div>
+    <span class="timer-sep">:</span>
+    <div class="timer-unit"><span class="timer-num" id="t-mins">--</span><span class="timer-label">דקות</span></div>
+    <span class="timer-sep">:</span>
+    <div class="timer-unit"><span class="timer-num" id="t-hours">--</span><span class="timer-label">שעות</span></div>
+    <span class="timer-sep">:</span>
+    <div class="timer-unit"><span class="timer-num" id="t-days">--</span><span class="timer-label">ימים</span></div>
+  </div>
+</footer>
 
 <script>
-    // אפקט ניצוצות זהב
-    function createSparkle(e) {
-        const sparkle = document.createElement('div');
-        sparkle.classList.add('sparkle');
-        
-        const x = e.touches ? e.touches[0].clientX : e.clientX;
-        const y = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        sparkle.style.left = `${x + window.scrollX}px`;
-        sparkle.style.top = `${y + window.scrollY}px`;
-        
-        const size = Math.random() * 6 + 4;
-        sparkle.style.width = `${size}px`;
-        sparkle.style.height = `${size}px`;
+  const WEDDING = new Date('2026-08-09T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  WEDDING.setHours(0, 0, 0, 0);
 
-        document.body.appendChild(sparkle);
+  const daysLeft = Math.round((WEDDING - today) / 86400000);
+  const litCount = daysLeft <= 0 ? 30 : daysLeft >= 30 ? 0 : 30 - daysLeft;
 
-        setTimeout(() => {
-            sparkle.remove();
-        }, 800);
+  const titleEl = document.getElementById('title');
+  const subEl   = document.getElementById('subtitle');
+
+  if (daysLeft <= 0) {
+    titleEl.textContent = '🎉 היום החתונה! 🎉';
+    subEl.textContent   = 'כל האורות דולקים לכבודך';
+    document.body.classList.add('wedding-day');
+  } else if (daysLeft > 30) {
+    titleEl.textContent = 'הספירה עוד לא התחילה';
+    subEl.textContent   = `${daysLeft} ימים לחתונה`;
+  } else {
+    titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'ימים'} – וכולנו באורות`;
+    subEl.textContent   = litCount > 0 ? `${litCount} נורות דולקות כבר` : 'הספירה מתחילה היום';
+  }
+
+  const grid = document.getElementById('grid');
+
+  // SVG defs (gradient) – מוסיפים פעם אחת
+  const svgDefs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svgDefs.style.cssText = 'position:absolute;width:0;height:0';
+  svgDefs.innerHTML = `<defs>
+    <radialGradient id="litGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%"   stop-color="#fff5a0"/>
+      <stop offset="45%"  stop-color="#f5c030"/>
+      <stop offset="100%" stop-color="#c87800"/>
+    </radialGradient>
+  </defs>`;
+  document.body.prepend(svgDefs);
+
+  // ספירה לאחור בזמן אמתי
+  const WEDDING_TIME = new Date('2026-08-09T19:00:00');
+  const pad = n => String(n).padStart(2, '0');
+
+  function updateTimer() {
+    const diff = WEDDING_TIME - new Date();
+    if (diff <= 0) {
+      document.getElementById('timer').innerHTML = '<span style="color:#c8a84b;font-size:clamp(0.7rem,1.8vh,1rem);letter-spacing:2px">🎉 מזל טוב!</span>';
+      return;
     }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('t-days').textContent  = pad(d);
+    document.getElementById('t-hours').textContent = pad(h);
+    document.getElementById('t-mins').textContent  = pad(m);
+    document.getElementById('t-secs').textContent  = pad(s);
+  }
 
-    window.addEventListener('mousemove', createSparkle);
-    window.addEventListener('touchmove', createSparkle);
+  updateTimer();
+  setInterval(updateTimer, 1000);
 
-    // הגדרת תאריכים לחישוב מד ההתקדמות (30 יום לפני החתונה)
-    const targetDate = new Date("August 9, 2026 19:33:00").getTime();
-    const totalDuration = 30 * 24 * 60 * 60 * 1000; // 30 ימים במילישניות
-    const startDate = targetDate - totalDuration;   // נקודת ההתחלה (10 ביולי 2026)
+  for (let day = 30; day >= 1; day--) {
+    const index   = 30 - day;
+    const isLit   = index < litCount;
+    const isToday = index === litCount - 1 && daysLeft > 0 && daysLeft <= 30;
 
-    const countdownFunction = setInterval(function() {
-        const now = new Date().getTime();
-        const distance = targetDate - now;
+    const wrap = document.createElement('div');
+    wrap.className = 'bulb-wrap' + (isLit ? ' lit' : '') + (isToday ? ' today' : '');
 
-        // חישוב הספירה לאחור
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    wrap.innerHTML = `
+      <svg viewBox="0 0 52 74" xmlns="http://www.w3.org/2000/svg" style="--i:${index}">
+        <!-- חוט תלייה -->
+        <line x1="26" y1="0" x2="26" y2="5" stroke="#222" stroke-width="1.5"/>
+        <!-- זכוכית -->
+        <path class="bulb-glass" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+        <!-- ברק פנימי -->
+        <path class="bulb-shine" d="M17 12 C20 9 25 8 29 9 C26 10 21 13 18 17 Z"/>
+        <!-- פילמנט -->
+        <polyline class="bulb-filament" points="22,50 22,40 26,35 30,40 30,50" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- בסיס -->
+        <rect class="bulb-base" x="19" y="53" width="14" height="4" rx="1"/>
+        <rect class="bulb-base" x="20" y="57" width="12" height="4" rx="1"/>
+        <rect class="bulb-cap"  x="21" y="61" width="10" height="4" rx="2"/>
+        <line class="bulb-base-line" x1="19" y1="55" x2="33" y2="55" stroke-width="0.5"/>
+        <line class="bulb-base-line" x1="20" y1="59" x2="32" y2="59" stroke-width="0.5"/>
+      </svg>
+      <span>${day}</span>
+    `;
 
-        document.getElementById("days").innerText = days < 10 ? "0" + days : days;
-        document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
-        document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
-        document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
-
-        // לוגיקה מתוקנת: הזמן שעבר חלקי סך הכל 30 יום (מתחיל מ-0% ועולה ככל שמתקרבים)
-        const timePassed = now - startDate;
-        let progressPercentage = (timePassed / totalDuration) * 100;
-        
-        // הגבלת האחוזים בין 0 ל-100 ליתר ביטחון
-        progressPercentage = Math.max(0, Math.min(100, progressPercentage));
-        document.getElementById("progressBar").style.width = progressPercentage + "%";
-
-        // כשהזמן מגיע ליעד
-        if (distance < 0) {
-            clearInterval(countdownFunction);
-            document.getElementById("countdown").style.display = "none";
-            document.getElementById("progressBar").style.width = "100%";
-            document.getElementById("wedding-message").innerText = "קול ששון וקול שמחה! החתונה מתחילה ברגעים אלו!";
-            document.getElementById("wedding-message").style.fontSize = "1.6rem";
-            document.getElementById("wedding-message").style.color = "#b89742";
-            document.getElementById("wedding-message").style.fontWeight = "bold";
-        }
-    }, 1000);
+    grid.appendChild(wrap);
+  }
 </script>
-
 </body>
 </html>
