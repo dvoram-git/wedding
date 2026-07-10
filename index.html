@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ספירת הימים של אביטל</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -15,10 +15,7 @@
 
   body {
     font-family: 'Heebo', sans-serif;
-    background: #0d0d0f;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, #2a1a0a 0%, transparent 70%),
-      radial-gradient(ellipse 60% 40% at 80% 110%, #1a0f00 0%, transparent 60%);
+    background-color: #0d0d0f;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -26,6 +23,42 @@
     padding: 2.5vh 3vw 1.5vh;
     height: 100dvh;
     color: #f0e0c0;
+    position: relative;
+  }
+
+  /* טקסטורת רקע + תאורה */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* טקסטורת noise עדינה */
+  body::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    opacity: 1;
+    mix-blend-mode: overlay;
+  }
+
+  /* שכבת תאורה: מרכז בהיר, קצוות כהים (vignette) */
+  body::after {
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 42%,
+        rgba(60, 35, 5, 0.55) 0%,
+        rgba(20, 12, 2, 0.82) 55%,
+        rgba(0, 0, 0, 0.97) 100%),
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(42,26,10,0.7) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(26,15,0,0.6) 0%, transparent 60%);
+  }
+
+  /* כל תוכן מעל השכבות */
+  header, .grid, footer {
+    position: relative;
+    z-index: 1;
   }
 
   /* ── HEADER ── */
@@ -35,9 +68,9 @@
   }
 
   .logo {
-    font-size: clamp(1.1rem, 3vh, 1.9rem);
+    font-size: clamp(0.9rem, 2.2vh, 1.6rem);
     font-weight: 700;
-    letter-spacing: 3px;
+    letter-spacing: 6px;
     background: linear-gradient(135deg, #f5d98b 0%, #c8860a 50%, #f5d98b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -54,28 +87,29 @@
 
   .logo-footer {
     font-size: clamp(0.7rem, 1.8vh, 1.1rem);
-    letter-spacing: 2px;
+    letter-spacing: 5px;
     margin-bottom: 0;
   }
 
   .eyebrow {
-    font-size: clamp(0.6rem, 1.6vh, 0.8rem);
+    font-size: clamp(0.5rem, 1.2vh, 0.7rem);
     font-weight: 300;
     letter-spacing: 4px;
     text-transform: uppercase;
     color: #8a6a3a;
-    margin-bottom: 0.5vh;
+    margin-bottom: 0.3vh;
   }
 
   header h1 {
-    font-size: clamp(1.1rem, 3.8vh, 2.2rem);
-    font-weight: 700;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3.2vh, 2.2rem);
+    font-weight: 400;
     background: linear-gradient(135deg, #f5d98b 0%, #e8a830 50%, #f5d98b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    letter-spacing: 1px;
-    line-height: 1.2;
+    letter-spacing: 5px;
+    line-height: 1.3;
   }
 
   header p {
@@ -91,7 +125,7 @@
     width: clamp(40px, 8vw, 80px);
     height: 1px;
     background: linear-gradient(90deg, transparent, #c8a84b, transparent);
-    margin: 1vh auto 0;
+    margin: 0.5vh auto 0;
   }
 
   /* ── GRID ── */
@@ -115,55 +149,150 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5vh;
+    justify-content: center;
+    gap: 0.3vh;
     width: 100%;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.04);
-    border-radius: clamp(6px, 1.2vh, 12px);
-    padding: 0.8vh 0.4vw 0.6vh;
-    transition: border-color 0.4s;
+    background:
+      linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.22);
+    border-radius: clamp(8px, 1.5vh, 16px);
+    padding: 0.8vh 0.5vw;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+  }
+
+  /* shimmer line across top */
+  .bulb-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* subtle inner glow bottom */
+  .bulb-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(to top, rgba(255,255,255,0.025), transparent);
+    border-radius: inherit;
+    pointer-events: none;
   }
 
   .bulb-wrap.lit {
-    background: rgba(245, 180, 40, 0.05);
-    border-color: rgba(245, 180, 40, 0.18);
+    background:
+      linear-gradient(160deg,
+        rgba(255,248,180,0.13) 0%,
+        rgba(245,185,40,0.10) 40%,
+        rgba(180,100,0,0.06) 100%);
+    border-color: rgba(245,200,60,0.5);
+    border-top-color: rgba(255,248,180,0.7);
   }
 
-  .bulb-wrap span {
-    font-size: clamp(0.5rem, 1.3vh, 0.78rem);
-    font-weight: 400;
-    color: #3a3020;
-    letter-spacing: 1px;
+  .bulb-wrap.lit::before {
+    background: linear-gradient(90deg, transparent, rgba(255,248,180,0.55), transparent);
   }
 
-  .bulb-wrap.lit span { color: #c8a84b; }
+  .bulb-wrap.lit::after {
+    content: '';
+    position: absolute;
+    /* ממוקם במרכז הנורה — כ-35% מלמעלה */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160%;
+    height: 160%;
+    background: radial-gradient(ellipse at center,
+      rgba(255, 200, 60, 0.22) 0%,
+      rgba(245, 150, 0, 0.12) 35%,
+      rgba(200, 100, 0, 0.05) 60%,
+      transparent 75%);
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  .bulb-wrap span.bulb-day {
+    font-size: clamp(0.95rem, 2.6vh, 1.6rem);
+    font-weight: 700;
+    color: rgba(190,170,140,0.75);
+    letter-spacing: 3px;
+    line-height: 1;
+    margin-bottom: 0.3vh;
+    text-shadow:
+      0 1px 0 rgba(0,0,0,0.6),
+      0 -1px 0 rgba(255,255,255,0.04);
+  }
+
+  .bulb-wrap.lit span.bulb-day {
+    color: #fff8d0;
+    text-shadow:
+      0 0 6px rgba(255,230,100,0.9),
+      0 0 20px rgba(245,180,40,0.6);
+  }
+
+  .bulb-wrap span.bulb-hdate {
+    font-size: clamp(0.42rem, 1.0vh, 0.6rem);
+    font-weight: 300;
+    color: rgba(100,82,50,0.5);
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+
+  .bulb-wrap.lit span.bulb-hdate {
+    color: rgba(180,138,48,0.6);
+    text-shadow: none;
+  }
 
   .bulb-wrap svg {
     width: 100%;
     height: auto;
-    max-height: 9.5vh;
+    max-height: 7vh;
   }
 
   /* ── SVG COLORS ── */
-  .bulb-glass     { fill: #1c1c1e; }
-  .bulb-shine     { fill: rgba(255,255,255,0.04); }
-  .bulb-filament  { stroke: #2e2e2e; }
-  .bulb-base      { fill: #161616; }
-  .bulb-base-line { stroke: #252525; }
-  .bulb-cap       { fill: #111; }
+  .bulb-glass        { fill: url(#unlitGrad); }
+  .bulb-bevel        { fill: url(#unlitBevel); }
+  .bulb-glass-stroke { fill: none; stroke: rgba(255,255,255,0.13); stroke-width: 0.8; }
+  .bulb-inner-ring   { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 0.6; }
+  .bulb-shine        { fill: rgba(255,255,255,0.18); }
+  .bulb-shine2       { fill: rgba(255,255,255,0.08); }
+  .bulb-shine3       { fill: rgba(255,255,255,0.06); }
+  .bulb-filament     { stroke: rgba(200,160,60,0.22); }  /* להט כבוי — זהב-שקוף עמום */
+  .bulb-filament-c   { stroke: rgba(180,130,40,0.08); }
+  .bulb-base         { fill: #32323a; }
+  .bulb-base-line    { stroke: rgba(255,255,255,0.1); }
+  .bulb-cap          { fill: #28282f; }
+  .bulb-wire         { stroke: #1e1e24; }
 
-  .lit .bulb-glass     { fill: url(#litGrad); }
-  .lit .bulb-shine     { fill: rgba(255,255,255,0.22); }
-  .lit .bulb-filament  { stroke: #fff8c0; }
-  .lit .bulb-base      { fill: #7a6030; }
-  .lit .bulb-base-line { stroke: #c8a84b; }
-  .lit .bulb-cap       { fill: #5a4520; }
+  .lit .bulb-glass        { fill: url(#litGrad); }
+  .lit .bulb-bevel        { fill: none; }
+  .lit .bulb-glass-stroke { stroke: rgba(255,248,160,0.3); }
+  .lit .bulb-inner-ring   { stroke: rgba(255,240,120,0.12); }
+  .lit .bulb-shine        { fill: rgba(255,255,255,0.28); }
+  .lit .bulb-shine2       { fill: rgba(255,255,200,0.12); }
+  .lit .bulb-shine3       { fill: rgba(255,255,255,0.1); }
+  .lit .bulb-filament     { stroke: #fff8c0; }
+  .lit .bulb-filament-c   { stroke: rgba(255,255,180,0.25); }
+  .lit .bulb-base         { fill: #7a6030; }
+  .lit .bulb-base-line    { stroke: #c8a84b; }
+  .lit .bulb-cap          { fill: #5a4520; }
+  .lit .bulb-wire         { stroke: #3a2e10; }
 
   .lit svg {
+    overflow: visible;
     filter:
-      drop-shadow(0 0 5px #f5c84290)
-      drop-shadow(0 0 14px #f5a50060)
-      drop-shadow(0 0 28px #f5a50030);
+      drop-shadow(0 0 5px rgba(255,220,80,0.9))
+      drop-shadow(0 0 14px rgba(245,170,0,0.7))
+      drop-shadow(0 0 35px rgba(245,130,0,0.45))
+      drop-shadow(0 0 70px rgba(245,110,0,0.2));
   }
 
   /* ── ANIMATIONS ── */
@@ -179,8 +308,36 @@
   }
 
   @keyframes pulse {
-    0%, 100% { filter: drop-shadow(0 0 5px #f5c84290) drop-shadow(0 0 14px #f5a50060) drop-shadow(0 0 28px #f5a50030); }
-    50%       { filter: drop-shadow(0 0 10px #f5c842cc) drop-shadow(0 0 26px #f5a500a0) drop-shadow(0 0 50px #f5a50050); }
+    0%, 100% {
+      filter: drop-shadow(0 0 8px #f5c842bb) drop-shadow(0 0 20px #f5a50088) drop-shadow(0 0 45px #f5a50055);
+      box-shadow: 0 0 12px rgba(245,180,40,0.15), 0 0 40px rgba(245,140,0,0.12), 0 0 80px rgba(245,140,0,0.06);
+    }
+    50% {
+      filter: drop-shadow(0 0 16px #f5c842ee) drop-shadow(0 0 36px #f5a500cc) drop-shadow(0 0 70px #f5a50088);
+      box-shadow: 0 0 20px rgba(245,180,40,0.3), 0 0 60px rgba(245,140,0,0.2), 0 0 120px rgba(245,140,0,0.1);
+    }
+  }
+
+  .today {
+    animation: pulseCard 2.2s ease-in-out 1s infinite;
+  }
+
+  @keyframes pulseCard {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(245,200,60,0.12),
+        0 2px 16px rgba(245,170,0,0.22),
+        0 4px 40px rgba(245,140,0,0.14),
+        inset 0 1px 0 rgba(255,248,160,0.25);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(245,220,80,0.3),
+        0 2px 28px rgba(245,180,0,0.45),
+        0 4px 70px rgba(245,140,0,0.3),
+        0 0 120px rgba(245,140,0,0.15),
+        inset 0 1px 0 rgba(255,255,180,0.4);
+    }
   }
 
   .today svg {
@@ -188,18 +345,31 @@
                pulse 2.2s ease-in-out calc(var(--i) * 0.055s + 1s) infinite;
   }
 
-  .today .bulb-wrap-inner {
-    position: relative;
+  @keyframes weddingGlow {
+    0%, 100% { filter: drop-shadow(0 0 12px #fff8c0cc) drop-shadow(0 0 30px #f5c842aa) drop-shadow(0 0 60px #f5a50077); }
+    50%       { filter: drop-shadow(0 0 22px #ffffffee) drop-shadow(0 0 50px #f5c842cc) drop-shadow(0 0 100px #f5a500aa); }
   }
 
-  @keyframes weddingGlow {
-    0%, 100% { filter: drop-shadow(0 0 8px #fff8c0cc) drop-shadow(0 0 22px #f5c842aa) drop-shadow(0 0 45px #f5a50066); }
-    50%       { filter: drop-shadow(0 0 16px #ffffffee) drop-shadow(0 0 38px #f5c842cc) drop-shadow(0 0 70px #f5a500aa); }
+  .wedding-day .lit {
+    animation: pulseCard 1.6s ease-in-out infinite;
   }
 
   .wedding-day .lit svg {
     animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards,
                weddingGlow 1.6s ease-in-out calc(var(--i) * 0.04s + 1s) infinite;
+  }
+
+  /* ── SPARKLES ── */
+  .sparkle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    animation: sparkleFly 0.8s ease-out forwards;
+  }
+
+  @keyframes sparkleFly {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0) rotate(var(--dr)); }
   }
 
   /* ── FOOTER ── */
@@ -216,26 +386,26 @@
     font-size: clamp(0.5rem, 1.3vh, 0.72rem);
     font-weight: 300;
     color: #2e2416;
-    letter-spacing: 3px;
+    letter-spacing: 5px;
     text-transform: uppercase;
   }
 
   /* ── COUNTDOWN TIMER ── */
   .timer {
     display: flex;
-    gap: clamp(6px, 1.2vw, 16px);
-    align-items: flex-end;
+    gap: clamp(4px, 0.8vw, 12px);
+    align-items: center;
   }
 
   .timer-unit {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
   }
 
   .timer-num {
-    font-size: clamp(1rem, 2.8vh, 1.8rem);
+    font-size: clamp(1.2rem, 3.5vh, 2.2rem);
     font-weight: 700;
     line-height: 1;
     background: linear-gradient(160deg, #f5d98b, #c8860a);
@@ -248,18 +418,21 @@
   }
 
   .timer-label {
-    font-size: clamp(0.45rem, 1.1vh, 0.62rem);
+    font-size: clamp(0.55rem, 1.3vh, 0.75rem);
     font-weight: 300;
-    color: #5a4a2a;
-    letter-spacing: 1px;
+    color: #8a7040;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: center;
+    width: 100%;
   }
 
   .timer-sep {
-    font-size: clamp(0.9rem, 2.4vh, 1.5rem);
+    font-size: clamp(1rem, 3vh, 1.8rem);
     font-weight: 300;
-    color: #3a2e18;
-    padding-bottom: 0.3vh;
+    color: #2e2410;
     line-height: 1;
+    margin-bottom: 1.2em;
   }
 </style>
 </head>
@@ -267,7 +440,6 @@
 
 <header>
   <div class="logo">דוד &amp; אביטל</div>
-  <div class="eyebrow">countdown</div>
   <h1 id="title">טוענת...</h1>
   <p id="subtitle"></p>
   <div class="divider"></div>
@@ -296,7 +468,7 @@
   WEDDING.setHours(0, 0, 0, 0);
 
   const daysLeft = Math.round((WEDDING - today) / 86400000);
-  const litCount = daysLeft <= 0 ? 30 : daysLeft >= 30 ? 0 : 30 - daysLeft;
+  const litCount = daysLeft <= 0 ? 30 : daysLeft > 30 ? 0 : 31 - daysLeft;
 
   const titleEl = document.getElementById('title');
   const subEl   = document.getElementById('subtitle');
@@ -310,7 +482,7 @@
     subEl.textContent   = `${daysLeft} ימים לחתונה`;
   } else {
     titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'ימים'} – וכולנו באורות`;
-    subEl.textContent   = litCount > 0 ? `${litCount} נורות דולקות כבר` : 'הספירה מתחילה היום';
+    subEl.textContent = '';
   }
 
   const grid = document.getElementById('grid');
@@ -319,10 +491,20 @@
   const svgDefs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svgDefs.style.cssText = 'position:absolute;width:0;height:0';
   svgDefs.innerHTML = `<defs>
-    <radialGradient id="litGrad" cx="40%" cy="35%" r="60%">
-      <stop offset="0%"   stop-color="#fff5a0"/>
-      <stop offset="45%"  stop-color="#f5c030"/>
-      <stop offset="100%" stop-color="#c87800"/>
+    <radialGradient id="unlitGrad" cx="38%" cy="28%" r="72%">
+      <stop offset="0%"   stop-color="#55555f"/>
+      <stop offset="45%"  stop-color="#3a3a42"/>
+      <stop offset="100%" stop-color="#22222a"/>
+    </radialGradient>
+    <radialGradient id="unlitBevel" cx="50%" cy="50%" r="50%">
+      <stop offset="60%"  stop-color="transparent"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.35)"/>
+    </radialGradient>
+    <radialGradient id="litGrad" cx="38%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#fffde0"/>
+      <stop offset="30%"  stop-color="#ffd84a"/>
+      <stop offset="70%"  stop-color="#f5a800"/>
+      <stop offset="100%" stop-color="#c06800"/>
     </radialGradient>
   </defs>`;
   document.body.prepend(svgDefs);
@@ -350,32 +532,95 @@
   updateTimer();
   setInterval(updateTimer, 1000);
 
+  updateTimer();
+  setInterval(updateTimer, 1000);
+
+  // ניצנוצים בתנועת עכבר
+  const SHAPES = ['✦', '★', '•', '◆', '✴', '✩'];
+  const COLORS = ['#f5d98b', '#f5c030', '#fff5a0', '#e8a830', '#ffffff', '#c8a84b'];
+  let lastSparkle = 0;
+
+  document.addEventListener('mousemove', e => {
+    const now = Date.now();
+    if (now - lastSparkle < 40) return;
+    lastSparkle = now;
+
+    const el = document.createElement('span');
+    el.className = 'sparkle';
+    el.textContent = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+
+    const size = 10 + Math.random() * 14;
+    const dx   = (Math.random() - 0.5) * 60;
+    const dy   = -20 - Math.random() * 50;
+    const dr   = (Math.random() - 0.5) * 360 + 'deg';
+
+    el.style.cssText = `
+      left: ${e.clientX}px;
+      top: ${e.clientY}px;
+      font-size: ${size}px;
+      color: ${COLORS[Math.floor(Math.random() * COLORS.length)]};
+      --dx: ${dx}px;
+      --dy: ${dy}px;
+      --dr: ${dr};
+    `;
+
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  });
+
+  const ONES  = ['','א','ב','ג','ד','ה','ו','ז','ח','ט'];
+  const TENS  = ['','י','כ','ל'];
+  // מיוחדים: 15=טו, 16=טז
+  function numToHebrew(n) {
+    if (n === 15) return 'ט״ו';
+    if (n === 16) return 'ט״ז';
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    const s = (TENS[t] || '') + (ONES[o] || '');
+    if (s.length === 1) return s + '׳';
+    return s.slice(0, -1) + '״' + s.slice(-1);
+  }
+
+  function hebrewDate(d) {
+    const parts = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long' }).formatToParts(d);
+    const day   = parts.find(p => p.type === 'day').value.replace(/[^0-9]/g, '');
+    const month = parts.find(p => p.type === 'month').value;
+    return numToHebrew(parseInt(day)) + ' ' + month;
+  }
+
   for (let day = 30; day >= 1; day--) {
     const index   = 30 - day;
     const isLit   = index < litCount;
     const isToday = index === litCount - 1 && daysLeft > 0 && daysLeft <= 30;
+
+    // תאריך לועזי של היום הזה
+    const bulbDate = new Date('2026-08-09T00:00:00');
+    bulbDate.setDate(bulbDate.getDate() - day + 1);
+    const heDate = hebrewDate(bulbDate);
 
     const wrap = document.createElement('div');
     wrap.className = 'bulb-wrap' + (isLit ? ' lit' : '') + (isToday ? ' today' : '');
 
     wrap.innerHTML = `
       <svg viewBox="0 0 52 74" xmlns="http://www.w3.org/2000/svg" style="--i:${index}">
-        <!-- חוט תלייה -->
-        <line x1="26" y1="0" x2="26" y2="5" stroke="#222" stroke-width="1.5"/>
-        <!-- זכוכית -->
+        <line class="bulb-wire" x1="26" y1="0" x2="26" y2="5" stroke-width="1.2"/>
         <path class="bulb-glass" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
-        <!-- ברק פנימי -->
-        <path class="bulb-shine" d="M17 12 C20 9 25 8 29 9 C26 10 21 13 18 17 Z"/>
-        <!-- פילמנט -->
-        <polyline class="bulb-filament" points="22,50 22,40 26,35 30,40 30,50" fill="none" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        <!-- בסיס -->
+        <path class="bulb-bevel" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+        <path class="bulb-glass-stroke" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+        <ellipse class="bulb-inner-ring" cx="26" cy="26" rx="13" ry="14"/>
+        <path class="bulb-shine" d="M15 13 C18 9 24 8 28 9 C25 11 19 14 16 19 Z"/>
+        <path class="bulb-shine2" d="M31 10 C33 10 35 12 35 14 C34 13 32 12 31 10 Z"/>
+        <path class="bulb-shine3" d="M10 22 C9 26 10 31 11 34 C10 30 10 25 11 22 Z"/>
+        <polyline class="bulb-filament-c" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline class="bulb-filament" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
         <rect class="bulb-base" x="19" y="53" width="14" height="4" rx="1"/>
         <rect class="bulb-base" x="20" y="57" width="12" height="4" rx="1"/>
         <rect class="bulb-cap"  x="21" y="61" width="10" height="4" rx="2"/>
         <line class="bulb-base-line" x1="19" y1="55" x2="33" y2="55" stroke-width="0.5"/>
         <line class="bulb-base-line" x1="20" y1="59" x2="32" y2="59" stroke-width="0.5"/>
       </svg>
-      <span>${day}</span>
+      <span class="bulb-day">${day}</span>
+      <span class="bulb-hdate">${day === 1 ? '<span style="background:linear-gradient(135deg,#f5d98b,#c8860a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 4px rgba(245,180,40,0.6))">💍 יום החתונה</span>' : heDate}</span>
     `;
 
     grid.appendChild(wrap);
