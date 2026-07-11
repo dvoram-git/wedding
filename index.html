@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ספירת הימים של אביטל</title>
+<title>WOW</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -449,7 +449,6 @@
 
 <footer>
   <div class="logo logo-footer">דוד &amp; אביטל</div>
-  <span class="footer-text">כל נורה היא יום של ציפייה</span>
   <div class="timer" id="timer">
     <div class="timer-unit"><span class="timer-num" id="t-secs">--</span><span class="timer-label">שניות</span></div>
     <span class="timer-sep">:</span>
@@ -475,13 +474,12 @@
 
   if (daysLeft <= 0) {
     titleEl.textContent = '🎉 היום החתונה! 🎉';
-    subEl.textContent   = 'כל האורות דולקים לכבודך';
     document.body.classList.add('wedding-day');
   } else if (daysLeft > 30) {
     titleEl.textContent = 'הספירה עוד לא התחילה';
-    subEl.textContent   = `${daysLeft} ימים לחתונה`;
+    subEl.textContent   = `${daysLeft} יום לחתונה`;
   } else {
-    titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'ימים'} – וכולנו באורות`;
+    titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'יום'} – וכולנו באורות`;
     subEl.textContent = '';
   }
 
