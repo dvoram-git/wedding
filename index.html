@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WOW</title>
+<title>wow</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -449,6 +449,7 @@
 
 <footer>
   <div class="logo logo-footer">דוד &amp; אביטל</div>
+  <span class="footer-text">כל נורה היא יום של ציפייה</span>
   <div class="timer" id="timer">
     <div class="timer-unit"><span class="timer-num" id="t-secs">--</span><span class="timer-label">שניות</span></div>
     <span class="timer-sep">:</span>
@@ -467,19 +468,20 @@
   WEDDING.setHours(0, 0, 0, 0);
 
   const daysLeft = Math.round((WEDDING - today) / 86400000);
-  const litCount = daysLeft <= 0 ? 30 : daysLeft > 30 ? 0 : 31 - daysLeft;
+  const litCount = daysLeft <= 0 ? 30 : daysLeft > 30 ? 0 : 30 - daysLeft;
 
   const titleEl = document.getElementById('title');
   const subEl   = document.getElementById('subtitle');
 
   if (daysLeft <= 0) {
     titleEl.textContent = '🎉 היום החתונה! 🎉';
+    subEl.textContent   = 'כל האורות דולקים לכבודך';
     document.body.classList.add('wedding-day');
   } else if (daysLeft > 30) {
     titleEl.textContent = 'הספירה עוד לא התחילה';
-    subEl.textContent   = `${daysLeft} יום לחתונה`;
+    subEl.textContent   = `${daysLeft} ימים לחתונה`;
   } else {
-    titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'יום'} – וכולנו באורות`;
+    titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'ימים'} – וכולנו באורות`;
     subEl.textContent = '';
   }
 
@@ -592,7 +594,7 @@
     const isToday = index === litCount - 1 && daysLeft > 0 && daysLeft <= 30;
 
     // תאריך לועזי של היום הזה
-    const bulbDate = new Date('2026-08-09T00:00:00');
+    const bulbDate = new Date('2026-08-09T12:00:00');
     bulbDate.setDate(bulbDate.getDate() - day + 1);
     const heDate = hebrewDate(bulbDate);
 
