@@ -140,8 +140,53 @@
     justify-items: center;
   }
 
+  .bulb-wrap.wedding {
+    grid-column: span 2;
+    border-color: rgba(245,200,60,0.6);
+    border-top-color: rgba(255,248,180,0.8);
+    background: linear-gradient(160deg, rgba(255,248,180,0.18) 0%, rgba(245,185,40,0.13) 40%, rgba(180,100,0,0.08) 100%);
+  }
+
+  .bulb-wrap.wedding svg {
+    max-height: 11vh;
+  }
+
+  .bulb-wrap.wedding span.bulb-day {
+    font-size: clamp(1.4rem, 4vh, 2.4rem);
+  }
+
+  .bulb-wrap.wedding span.bulb-hdate {
+    font-size: clamp(0.8rem, 2vh, 1.2rem);
+  }
+
+  .timer-card {
+    grid-column: span 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1vh;
+    width: 100%;
+    background: linear-gradient(160deg, rgba(255,248,180,0.08) 0%, rgba(245,185,40,0.05) 100%);
+    border: 1px solid rgba(245,200,60,0.3);
+    border-top-color: rgba(255,248,180,0.5);
+    border-radius: clamp(8px, 1.5vh, 16px);
+    padding: 1vh 2vw;
+    backdrop-filter: blur(4px);
+  }
+
+  .timer-card-label {
+    font-size: clamp(0.5rem, 1.2vh, 0.7rem);
+    font-weight: 300;
+    color: #8a7040;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
   @media (max-width: 500px) {
     .grid { grid-template-columns: repeat(5, 1fr); gap: 1.2vh 2vw; }
+    .bulb-wrap.wedding { grid-column: span 2; }
+    .timer-card { grid-column: span 3; }
   }
 
   /* ── BULB CARD ── */
@@ -220,7 +265,7 @@
   }
 
   .bulb-wrap span.bulb-day {
-    font-size: clamp(0.95rem, 2.6vh, 1.6rem);
+    font-size: clamp(1.3rem, 3.5vh, 2.5rem);
     font-weight: 700;
     color: rgba(190,170,140,0.75);
     letter-spacing: 3px;
@@ -239,7 +284,7 @@
   }
 
   .bulb-wrap span.bulb-hdate {
-    font-size: clamp(0.42rem, 1.0vh, 0.6rem);
+    font-size: clamp(0.72rem, 1.9vh, 1.15rem);
     font-weight: 300;
     color: rgba(100,82,50,0.5);
     letter-spacing: 0.5px;
@@ -252,9 +297,10 @@
   }
 
   .bulb-wrap svg {
-    width: 100%;
-    height: auto;
-    max-height: 7vh;
+    width: auto;
+    height: 4.5vh;
+    max-height: 4.5vh;
+    flex-shrink: 0;
   }
 
   /* ── SVG COLORS ── */
@@ -405,7 +451,7 @@
   }
 
   .timer-num {
-    font-size: clamp(1.2rem, 3.5vh, 2.2rem);
+    font-size: clamp(2.5rem, 7vh, 5rem);
     font-weight: 700;
     line-height: 1;
     background: linear-gradient(160deg, #f5d98b, #c8860a);
@@ -418,7 +464,7 @@
   }
 
   .timer-label {
-    font-size: clamp(0.55rem, 1.3vh, 0.75rem);
+    font-size: clamp(0.8rem, 2vh, 1.2rem);
     font-weight: 300;
     color: #8a7040;
     letter-spacing: 1.5px;
@@ -428,7 +474,7 @@
   }
 
   .timer-sep {
-    font-size: clamp(1rem, 3vh, 1.8rem);
+    font-size: clamp(2rem, 5vh, 4rem);
     font-weight: 300;
     color: #2e2410;
     line-height: 1;
@@ -450,15 +496,7 @@
 <footer>
   <div class="logo logo-footer">דוד &amp; אביטל</div>
   <span class="footer-text">כל נורה היא יום של ציפייה</span>
-  <div class="timer" id="timer">
-    <div class="timer-unit"><span class="timer-num" id="t-secs">--</span><span class="timer-label">שניות</span></div>
-    <span class="timer-sep">:</span>
-    <div class="timer-unit"><span class="timer-num" id="t-mins">--</span><span class="timer-label">דקות</span></div>
-    <span class="timer-sep">:</span>
-    <div class="timer-unit"><span class="timer-num" id="t-hours">--</span><span class="timer-label">שעות</span></div>
-    <span class="timer-sep">:</span>
-    <div class="timer-unit"><span class="timer-num" id="t-days">--</span><span class="timer-label">ימים</span></div>
-  </div>
+
 </footer>
 
 <script>
@@ -510,7 +548,7 @@
   document.body.prepend(svgDefs);
 
   // ספירה לאחור בזמן אמתי
-  const WEDDING_TIME = new Date('2026-08-09T19:00:00');
+  const WEDDING_TIME = new Date('2026-08-09T18:30:00');
   const pad = n => String(n).padStart(2, '0');
 
   function updateTimer() {
@@ -528,12 +566,6 @@
     document.getElementById('t-mins').textContent  = pad(m);
     document.getElementById('t-secs').textContent  = pad(s);
   }
-
-  updateTimer();
-  setInterval(updateTimer, 1000);
-
-  updateTimer();
-  setInterval(updateTimer, 1000);
 
   // ניצנוצים בתנועת עכבר
   const SHAPES = ['✦', '★', '•', '◆', '✴', '✩'];
@@ -588,43 +620,75 @@
     return numToHebrew(parseInt(day)) + ' ' + month;
   }
 
-  for (let day = 30; day >= 1; day--) {
-    const index   = 30 - day;
-    const isLit   = index < litCount;
-    const isToday = index === litCount - 1 && daysLeft > 0 && daysLeft <= 30;
+  const svgBulb = (index) => `
+    <svg viewBox="0 0 52 74" xmlns="http://www.w3.org/2000/svg" style="--i:${index}">
+      <line class="bulb-wire" x1="26" y1="0" x2="26" y2="5" stroke-width="1.2"/>
+      <path class="bulb-glass" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+      <path class="bulb-bevel" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+      <path class="bulb-glass-stroke" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+      <ellipse class="bulb-inner-ring" cx="26" cy="26" rx="13" ry="14"/>
+      <path class="bulb-shine" d="M15 13 C18 9 24 8 28 9 C25 11 19 14 16 19 Z"/>
+      <path class="bulb-shine2" d="M31 10 C33 10 35 12 35 14 C34 13 32 12 31 10 Z"/>
+      <path class="bulb-shine3" d="M10 22 C9 26 10 31 11 34 C10 30 10 25 11 22 Z"/>
+      <polyline class="bulb-filament-c" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline class="bulb-filament" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect class="bulb-base" x="19" y="53" width="14" height="4" rx="1"/>
+      <rect class="bulb-base" x="20" y="57" width="12" height="4" rx="1"/>
+      <rect class="bulb-cap"  x="21" y="61" width="10" height="4" rx="2"/>
+      <line class="bulb-base-line" x1="19" y1="55" x2="33" y2="55" stroke-width="0.5"/>
+      <line class="bulb-base-line" x1="20" y1="59" x2="32" y2="59" stroke-width="0.5"/>
+    </svg>`;
 
-    // תאריך לועזי של היום הזה
+  // נורת יום החתונה
+  const weddingWrap = document.createElement('div');
+  const isWeddingLit = daysLeft <= 0;
+  weddingWrap.className = 'bulb-wrap wedding' + (isWeddingLit ? ' lit' : '');
+  weddingWrap.innerHTML = `
+    ${svgBulb(30)}
+    <span class="bulb-day">0</span>
+    <span class="bulb-hdate"><span style="background:linear-gradient(135deg,#f5d98b,#c8860a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 4px rgba(245,180,40,0.6))">💍 יום החתונה</span></span>
+  `;
+
+  const timerCard = document.createElement('div');
+  timerCard.className = 'timer-card';
+  timerCard.innerHTML = `
+    <span class="timer-card-label">ספירה לאחור</span>
+    <div class="timer" id="timer">
+      <div class="timer-unit"><span class="timer-num" id="t-secs">--</span><span class="timer-label">שניות</span></div>
+      <span class="timer-sep">:</span>
+      <div class="timer-unit"><span class="timer-num" id="t-mins">--</span><span class="timer-label">דקות</span></div>
+      <span class="timer-sep">:</span>
+      <div class="timer-unit"><span class="timer-num" id="t-hours">--</span><span class="timer-label">שעות</span></div>
+      <span class="timer-sep">:</span>
+      <div class="timer-unit"><span class="timer-num" id="t-days">--</span><span class="timer-label">ימים</span></div>
+    </div>
+  `;
+  for (let day = 30; day >= 1; day--) {
+    const index   = 30 - day + 1;
+    const isLit   = daysLeft > 0 && day <= 30 && day >= daysLeft;
+    const isToday = daysLeft > 0 && daysLeft <= 30 && day === daysLeft;
+
     const bulbDate = new Date('2026-08-09T12:00:00');
-    bulbDate.setDate(bulbDate.getDate() - day + 1);
+    bulbDate.setDate(bulbDate.getDate() - day);
     const heDate = hebrewDate(bulbDate);
 
     const wrap = document.createElement('div');
     wrap.className = 'bulb-wrap' + (isLit ? ' lit' : '') + (isToday ? ' today' : '');
 
     wrap.innerHTML = `
-      <svg viewBox="0 0 52 74" xmlns="http://www.w3.org/2000/svg" style="--i:${index}">
-        <line class="bulb-wire" x1="26" y1="0" x2="26" y2="5" stroke-width="1.2"/>
-        <path class="bulb-glass" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
-        <path class="bulb-bevel" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
-        <path class="bulb-glass-stroke" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
-        <ellipse class="bulb-inner-ring" cx="26" cy="26" rx="13" ry="14"/>
-        <path class="bulb-shine" d="M15 13 C18 9 24 8 28 9 C25 11 19 14 16 19 Z"/>
-        <path class="bulb-shine2" d="M31 10 C33 10 35 12 35 14 C34 13 32 12 31 10 Z"/>
-        <path class="bulb-shine3" d="M10 22 C9 26 10 31 11 34 C10 30 10 25 11 22 Z"/>
-        <polyline class="bulb-filament-c" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <polyline class="bulb-filament" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <rect class="bulb-base" x="19" y="53" width="14" height="4" rx="1"/>
-        <rect class="bulb-base" x="20" y="57" width="12" height="4" rx="1"/>
-        <rect class="bulb-cap"  x="21" y="61" width="10" height="4" rx="2"/>
-        <line class="bulb-base-line" x1="19" y1="55" x2="33" y2="55" stroke-width="0.5"/>
-        <line class="bulb-base-line" x1="20" y1="59" x2="32" y2="59" stroke-width="0.5"/>
-      </svg>
+      ${svgBulb(index)}
       <span class="bulb-day">${day}</span>
-      <span class="bulb-hdate">${day === 1 ? '<span style="background:linear-gradient(135deg,#f5d98b,#c8860a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 4px rgba(245,180,40,0.6))">💍 יום החתונה</span>' : heDate}</span>
+      <span class="bulb-hdate">${heDate}</span>
     `;
 
     grid.appendChild(wrap);
   }
+
+  grid.appendChild(weddingWrap);
+  grid.appendChild(timerCard);
+
+  updateTimer();
+  setInterval(updateTimer, 1000);
 </script>
 </body>
 </html>
