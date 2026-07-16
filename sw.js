@@ -1,67 +1,1857 @@
-// sw.js — Service Worker להתראות חתונה
-const CACHE = 'wedding-v1';
-const STORAGE_KEY = 'aviTal_journal_v1';
-const CHECK_INTERVAL = 60000; // בדיקה כל דקה
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wow</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Cormorant+Garamond:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-// ===== INSTALL & ACTIVATE =====
-self.addEventListener('install', e => {
-  self.skipWaiting();
-});
-
-
-self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
-});
-
-// ===== הודעות מהדף =====
-self.addEventListener('message', e => {
-  if (e.data && e.data.type === 'CHECK_REMINDERS') {
-    checkAndNotify(e.data.journal, e.data.nowStr, e.data.fired);
+  html, body {
+    height: 100%;
+    overflow: hidden;
   }
-  if (e.data && e.data.type === 'TEST_NOTIF') {
-    sendNotif('בדיקה 💍', 'ההתראות עובדות!', '');
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background-color: #0d0d0f;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2.5vh 3vw 1.5vh;
+    height: 100dvh;
+    color: #f0e0c0;
+    position: relative;
   }
-});
 
-// ===== שליחת התראה =====
-function sendNotif(title, body, time) {
-  const options = {
-    body: time ? `${time}  —  ${body}` : body,
-    icon: 'https://emojicdn.elk.sh/💍?style=twitter',
-    badge: 'https://emojicdn.elk.sh/💍?style=twitter',
-    tag: 'wedding-' + Date.now(),
-    requireInteraction: true,
-    vibrate: [200, 100, 200],
-    data: { time, body }
-  };
-  return self.registration.showNotification(title, options);
-}
+  /* טקסטורת רקע + תאורה */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-// ===== בדיקת תזכורות =====
-function checkAndNotify(journal, nowStr, fired) {
-  if (!journal) return;
-  Object.entries(journal).forEach(([day, tasks]) => {
-    if (!Array.isArray(tasks)) return;
-    tasks.forEach(task => {
-      if (!task.time || task.done) return;
-      const key = `${day}-${task.id}-${task.time}`;
-      if (task.time === nowStr && !fired.includes(key)) {
-        sendNotif(`⏰ תזכורת — יום ${day}`, task.text, task.time);
-      }
-    });
+  /* טקסטורת noise עדינה */
+  body::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    opacity: 1;
+    mix-blend-mode: overlay;
+  }
+
+  /* שכבת תאורה: מרכז בהיר, קצוות כהים (vignette) */
+  body::after {
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 42%,
+        rgba(60, 35, 5, 0.55) 0%,
+        rgba(20, 12, 2, 0.82) 55%,
+        rgba(0, 0, 0, 0.97) 100%),
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(42,26,10,0.7) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(26,15,0,0.6) 0%, transparent 60%);
+  }
+
+  /* כל תוכן מעל השכבות */
+  header, .grid, footer {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    font-size: clamp(0.9rem, 2.2vh, 1.6rem);
+    font-weight: 700;
+    letter-spacing: 6px;
+    background: linear-gradient(135deg, #f5d98b 0%, #c8860a 50%, #f5d98b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.4vh;
+  }
+
+  .logo::before, .logo::after {
+    content: '✦';
+    font-size: 0.6em;
+    margin: 0 0.5em;
+    opacity: 0.6;
+  }
+
+  .logo-footer {
+    font-size: clamp(0.7rem, 1.8vh, 1.1rem);
+    letter-spacing: 5px;
+    margin-bottom: 0;
+  }
+
+  .eyebrow {
+    font-size: clamp(0.5rem, 1.2vh, 0.7rem);
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #8a6a3a;
+    margin-bottom: 0.3vh;
+  }
+
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 3.2vh, 2.2rem);
+    font-weight: 400;
+    background: linear-gradient(135deg, #f5d98b 0%, #e8a830 50%, #f5d98b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 5px;
+    line-height: 1.3;
+  }
+
+  header p {
+    font-size: clamp(0.65rem, 1.8vh, 0.95rem);
+    font-weight: 300;
+    color: #7a6040;
+    margin-top: 0.4vh;
+    letter-spacing: 1px;
+  }
+
+  /* thin gold divider */
+  .divider {
+    width: clamp(40px, 8vw, 80px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #c8a84b, transparent);
+    margin: 0.5vh auto 0;
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1vh 1.2vw;
+    width: 100%;
+    max-width: min(96vw, 155vh);
+    flex: 1;
+    align-content: center;
+    justify-items: center;
+  }
+
+  .bulb-wrap.wedding {
+    grid-column: span 2;
+    border-color: rgba(245,200,60,0.6);
+    border-top-color: rgba(255,248,180,0.8);
+    background: linear-gradient(160deg, rgba(255,248,180,0.18) 0%, rgba(245,185,40,0.13) 40%, rgba(180,100,0,0.08) 100%);
+  }
+
+  .bulb-wrap.wedding svg {
+    max-height: 11vh;
+  }
+
+  .bulb-wrap.wedding span.bulb-day {
+    font-size: clamp(1.4rem, 4vh, 2.4rem);
+  }
+
+  .bulb-wrap.wedding span.bulb-hdate {
+    font-size: clamp(0.8rem, 2vh, 1.2rem);
+  }
+
+  .timer-card {
+    grid-column: span 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1vh;
+    width: 100%;
+    background: linear-gradient(160deg, rgba(255,248,180,0.08) 0%, rgba(245,185,40,0.05) 100%);
+    border: 1px solid rgba(245,200,60,0.3);
+    border-top-color: rgba(255,248,180,0.5);
+    border-radius: clamp(8px, 1.5vh, 16px);
+    padding: 1vh 2vw;
+    backdrop-filter: blur(4px);
+  }
+
+  .timer-card-label {
+    font-size: clamp(0.5rem, 1.2vh, 0.7rem);
+    font-weight: 300;
+    color: #8a7040;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: repeat(5, 1fr); gap: 1.2vh 2vw; }
+    .bulb-wrap.wedding { grid-column: span 2; }
+    .timer-card { grid-column: span 3; }
+  }
+
+  /* ── BULB CARD ── */
+  .bulb-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3vh;
+    width: 100%;
+    background:
+      linear-gradient(160deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-top-color: rgba(255,255,255,0.22);
+    border-radius: clamp(8px, 1.5vh, 16px);
+    padding: 0.8vh 0.5vw;
+    transition: all 0.5s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+  }
+
+  /* shimmer line across top */
+  .bulb-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* subtle inner glow bottom */
+  .bulb-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(to top, rgba(255,255,255,0.025), transparent);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .bulb-wrap.lit {
+    background:
+      linear-gradient(160deg,
+        rgba(255,248,180,0.13) 0%,
+        rgba(245,185,40,0.10) 40%,
+        rgba(180,100,0,0.06) 100%);
+    border-color: rgba(245,200,60,0.5);
+    border-top-color: rgba(255,248,180,0.7);
+  }
+
+  .bulb-wrap.lit::before {
+    background: linear-gradient(90deg, transparent, rgba(255,248,180,0.55), transparent);
+  }
+
+  .bulb-wrap.lit::after {
+    content: '';
+    position: absolute;
+    /* ממוקם במרכז הנורה — כ-35% מלמעלה */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160%;
+    height: 160%;
+    background: radial-gradient(ellipse at center,
+      rgba(255, 200, 60, 0.22) 0%,
+      rgba(245, 150, 0, 0.12) 35%,
+      rgba(200, 100, 0, 0.05) 60%,
+      transparent 75%);
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  .bulb-wrap span.bulb-day {
+    font-size: clamp(1.3rem, 3.5vh, 2.5rem);
+    font-weight: 700;
+    color: rgba(190,170,140,0.75);
+    letter-spacing: 3px;
+    line-height: 1;
+    margin-bottom: 0.3vh;
+    text-shadow:
+      0 1px 0 rgba(0,0,0,0.6),
+      0 -1px 0 rgba(255,255,255,0.04);
+  }
+
+  .bulb-wrap.lit span.bulb-day {
+    color: #fff8d0;
+    text-shadow:
+      0 0 6px rgba(255,230,100,0.9),
+      0 0 20px rgba(245,180,40,0.6);
+  }
+
+  .bulb-wrap span.bulb-hdate {
+    font-size: clamp(0.72rem, 1.9vh, 1.15rem);
+    font-weight: 300;
+    color: rgba(100,82,50,0.5);
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+
+  .bulb-wrap.lit span.bulb-hdate {
+    color: rgba(180,138,48,0.6);
+    text-shadow: none;
+  }
+
+  .bulb-wrap svg {
+    width: auto;
+    height: 4.5vh;
+    max-height: 4.5vh;
+    flex-shrink: 0;
+  }
+
+  /* ── SVG COLORS ── */
+  .bulb-glass        { fill: url(#unlitGrad); }
+  .bulb-bevel        { fill: url(#unlitBevel); }
+  .bulb-glass-stroke { fill: none; stroke: rgba(255,255,255,0.13); stroke-width: 0.8; }
+  .bulb-inner-ring   { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 0.6; }
+  .bulb-shine        { fill: rgba(255,255,255,0.18); }
+  .bulb-shine2       { fill: rgba(255,255,255,0.08); }
+  .bulb-shine3       { fill: rgba(255,255,255,0.06); }
+  .bulb-filament     { stroke: rgba(200,160,60,0.22); }  /* להט כבוי — זהב-שקוף עמום */
+  .bulb-filament-c   { stroke: rgba(180,130,40,0.08); }
+  .bulb-base         { fill: #32323a; }
+  .bulb-base-line    { stroke: rgba(255,255,255,0.1); }
+  .bulb-cap          { fill: #28282f; }
+  .bulb-wire         { stroke: #1e1e24; }
+
+  .lit .bulb-glass        { fill: url(#litGrad); }
+  .lit .bulb-bevel        { fill: none; }
+  .lit .bulb-glass-stroke { stroke: rgba(255,248,160,0.3); }
+  .lit .bulb-inner-ring   { stroke: rgba(255,240,120,0.12); }
+  .lit .bulb-shine        { fill: rgba(255,255,255,0.28); }
+  .lit .bulb-shine2       { fill: rgba(255,255,200,0.12); }
+  .lit .bulb-shine3       { fill: rgba(255,255,255,0.1); }
+  .lit .bulb-filament     { stroke: #fff8c0; }
+  .lit .bulb-filament-c   { stroke: rgba(255,255,180,0.25); }
+  .lit .bulb-base         { fill: #7a6030; }
+  .lit .bulb-base-line    { stroke: #c8a84b; }
+  .lit .bulb-cap          { fill: #5a4520; }
+  .lit .bulb-wire         { stroke: #3a2e10; }
+
+  .lit svg {
+    overflow: visible;
+    filter:
+      drop-shadow(0 0 5px rgba(255,220,80,0.9))
+      drop-shadow(0 0 14px rgba(245,170,0,0.7))
+      drop-shadow(0 0 35px rgba(245,130,0,0.45))
+      drop-shadow(0 0 70px rgba(245,110,0,0.2));
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeOn {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .lit svg {
+    opacity: 0;
+    animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards;
+    animation-delay: calc(var(--i) * 0.055s);
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      filter: drop-shadow(0 0 8px #f5c842bb) drop-shadow(0 0 20px #f5a50088) drop-shadow(0 0 45px #f5a50055);
+      box-shadow: 0 0 12px rgba(245,180,40,0.15), 0 0 40px rgba(245,140,0,0.12), 0 0 80px rgba(245,140,0,0.06);
+    }
+    50% {
+      filter: drop-shadow(0 0 16px #f5c842ee) drop-shadow(0 0 36px #f5a500cc) drop-shadow(0 0 70px #f5a50088);
+      box-shadow: 0 0 20px rgba(245,180,40,0.3), 0 0 60px rgba(245,140,0,0.2), 0 0 120px rgba(245,140,0,0.1);
+    }
+  }
+
+  .today {
+    animation: pulseCard 2.2s ease-in-out 1s infinite;
+  }
+
+  @keyframes pulseCard {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(245,200,60,0.12),
+        0 2px 16px rgba(245,170,0,0.22),
+        0 4px 40px rgba(245,140,0,0.14),
+        inset 0 1px 0 rgba(255,248,160,0.25);
+    }
+    50% {
+      box-shadow:
+        0 0 0 1px rgba(245,220,80,0.3),
+        0 2px 28px rgba(245,180,0,0.45),
+        0 4px 70px rgba(245,140,0,0.3),
+        0 0 120px rgba(245,140,0,0.15),
+        inset 0 1px 0 rgba(255,255,180,0.4);
+    }
+  }
+
+  .today svg {
+    animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards,
+               pulse 2.2s ease-in-out calc(var(--i) * 0.055s + 1s) infinite;
+  }
+
+  @keyframes weddingGlow {
+    0%, 100% { filter: drop-shadow(0 0 12px #fff8c0cc) drop-shadow(0 0 30px #f5c842aa) drop-shadow(0 0 60px #f5a50077); }
+    50%       { filter: drop-shadow(0 0 22px #ffffffee) drop-shadow(0 0 50px #f5c842cc) drop-shadow(0 0 100px #f5a500aa); }
+  }
+
+  .wedding-day .lit {
+    animation: pulseCard 1.6s ease-in-out infinite;
+  }
+
+  .wedding-day .lit svg {
+    animation: fadeOn 0.9s cubic-bezier(.4,0,.2,1) forwards,
+               weddingGlow 1.6s ease-in-out calc(var(--i) * 0.04s + 1s) infinite;
+  }
+
+  /* ── SPARKLES ── */
+  .sparkle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    animation: sparkleFly 0.8s ease-out forwards;
+  }
+
+  @keyframes sparkleFly {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0) rotate(var(--dr)); }
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    flex-shrink: 0;
+    width: 100%;
+    max-width: min(96vw, 155vh);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-text {
+    font-size: clamp(0.5rem, 1.3vh, 0.72rem);
+    font-weight: 300;
+    color: #2e2416;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+  }
+
+  /* ── COUNTDOWN TIMER ── */
+  .timer {
+    display: flex;
+    gap: clamp(4px, 0.8vw, 12px);
+    align-items: center;
+  }
+
+  .timer-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .timer-num {
+    font-size: clamp(2.5rem, 7vh, 5rem);
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(160deg, #f5d98b, #c8860a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    min-width: 2ch;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer-label {
+    font-size: clamp(0.8rem, 2vh, 1.2rem);
+    font-weight: 300;
+    color: #8a7040;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: center;
+    width: 100%;
+  }
+
+  .timer-sep {
+    font-size: clamp(2rem, 5vh, 4rem);
+    font-weight: 300;
+    color: #2e2410;
+    line-height: 1;
+    margin-bottom: 1.2em;
+  }
+
+  /* ── JOURNAL MODAL ── */
+  .bulb-wrap { cursor: pointer; }
+  .bulb-wrap:hover { transform: scale(1.04); }
+  .bulb-wrap.wedding:hover { transform: scale(1.02); }
+
+  .task-badge {
+    position: absolute;
+    top: 5px; right: 5px;
+    background: #f5c030;
+    color: #1a1008;
+    font-size: 0.55rem;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .task-badge.visible { opacity: 1; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 3, 0, 0.72);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.22s, visibility 0.22s;
+  }
+  .modal-overlay.open {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .modal {
+    background: #1a140a;
+    border: 1px solid rgba(200,168,75,0.35);
+    border-top-color: rgba(255,248,160,0.5);
+    border-radius: 14px;
+    padding: 24px 28px;
+    width: min(460px, 92vw);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 0 60px rgba(245,180,40,0.15), 0 20px 60px rgba(0,0,0,0.6);
+    position: relative;
+    direction: rtl;
+  }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(200,168,75,0.2);
+    padding-bottom: 12px;
+  }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-weight: 600;
+    background: linear-gradient(135deg, #f5d98b, #c8860a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.3rem; color: #5a4820;
+    line-height: 1; padding: 2px 8px; border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .modal-close:hover { color: #f5d98b; background: rgba(200,168,75,0.1); }
+
+  .task-list { list-style: none; margin-bottom: 14px; min-height: 20px; }
+
+  .task-item {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(200,168,75,0.18);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 7px;
+    transition: opacity 0.2s;
+  }
+  .task-item.done { opacity: 0.4; }
+  .task-item.done .task-text { text-decoration: line-through; }
+
+  .task-check {
+    width: 17px; height: 17px;
+    border: 1.5px solid rgba(200,168,75,0.6);
+    border-radius: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .task-check.checked { background: #c8a84b; border-color: #c8a84b; }
+  .task-check.checked::after { content: '✓'; font-size: 0.65rem; color: #1a1008; font-weight: 700; }
+
+  .task-time {
+    font-size: 0.75rem; color: #c8a84b;
+    font-weight: 700; flex-shrink: 0; min-width: 40px;
+  }
+  .task-text { flex: 1; font-size: 0.85rem; color: #d0b880; word-break: break-word; }
+  .task-delete {
+    background: none; border: none; cursor: pointer;
+    color: #4a3820; font-size: 0.95rem; padding: 0 2px;
+    transition: color 0.15s; flex-shrink: 0;
+  }
+  .task-delete:hover { color: #c05030; }
+
+  .task-actions {
+    display: flex; gap: 4px; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .task-item:hover .task-actions { opacity: 1; }
+
+  .task-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.9rem; padding: 2px 4px; border-radius: 4px;
+    transition: background 0.15s; line-height: 1;
+  }
+  .task-btn:hover { background: rgba(200,168,75,0.15); }
+
+  .task-item.snoozed .task-time { color: #7a9a50; }
+
+  .no-tasks-msg {
+    text-align: center; color: #4a3820;
+    font-size: 0.8rem; padding: 10px 0; font-style: italic;
+  }
+
+  .add-task-form {
+    display: flex; gap: 7px; flex-wrap: wrap;
+    border-top: 1px solid rgba(200,168,75,0.2);
+    padding-top: 12px;
+  }
+  .add-task-form input[type="time"],
+  .add-task-form input[type="text"] {
+    padding: 7px 11px;
+    border: 1px solid rgba(200,168,75,0.3);
+    border-radius: 6px; font-size: 0.85rem;
+    font-family: 'Heebo', sans-serif;
+    background: rgba(255,255,255,0.05);
+    color: #f0e0c0;
+    transition: border-color 0.15s;
+  }
+  .add-task-form input[type="time"] { width: 100px; direction: ltr; }
+  .add-task-form input[type="text"] { flex: 1; min-width: 130px; direction: rtl; }
+  .add-task-form input:focus {
+    outline: none; border-color: #c8a84b;
+    box-shadow: 0 0 0 2px rgba(200,168,75,0.15);
+  }
+  .add-task-form input::placeholder { color: #4a3820; }
+  .btn-add {
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #c8a84b, #8a6020);
+    color: #fff8d0; border: none; border-radius: 6px;
+    cursor: pointer; font-family: 'Heebo', sans-serif;
+    font-size: 0.85rem; font-weight: 700;
+    transition: filter 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { filter: brightness(1.2); transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+
+  /* ── TOAST NOTIFICATIONS ── */
+  #toast-container {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: linear-gradient(135deg, #1e160a, #2a1e0e);
+    border: 2px solid rgba(200,168,75,0.8);
+    border-top-color: rgba(255,248,160,0.9);
+    border-radius: 14px;
+    padding: 18px 24px 20px;
+    color: #f0e0c0;
+    font-family: 'Heebo', sans-serif;
+    font-size: clamp(0.9rem, 2vh, 1.1rem);
+    direction: rtl;
+    text-align: right;
+    box-shadow:
+      0 0 0 4px rgba(245,180,40,0.15),
+      0 0 40px rgba(245,180,40,0.4),
+      0 12px 40px rgba(0,0,0,0.7);
+    max-width: min(420px, 92vw);
+    min-width: min(320px, 85vw);
+    pointer-events: auto;
+    overflow: hidden;
+    animation: toastIn 0.4s cubic-bezier(.4,0,.2,1) forwards,
+               toastPulse 1s ease-in-out 0.5s 3;
+  }
+
+  .toast.hiding {
+    animation: toastOut 0.4s cubic-bezier(.4,0,.2,1) forwards;
+  }
+
+  .toast-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: #f5d98b;
+    margin-bottom: 8px;
+  }
+
+  .toast-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .toast-icon { font-size: 2rem; flex-shrink: 0; }
+  .toast-text { flex: 1; line-height: 1.5; font-size: 1rem; }
+
+  .toast-time {
+    font-size: 0.85rem;
+    color: #c8a84b;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .toast-close {
+    position: absolute;
+    top: 10px; left: 12px;
+    background: none; border: none;
+    color: #6a5030; font-size: 1.1rem;
+    cursor: pointer; line-height: 1;
+    pointer-events: auto;
+    transition: color 0.15s;
+  }
+  .toast-close:hover { color: #f5d98b; }
+
+  .toast-progress {
+    position: absolute;
+    bottom: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #c8a84b, #f5d98b);
+    border-radius: 0 0 14px 0;
+    animation: toastProgress 15s linear forwards;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(10px) scale(0.95); }
+  }
+  @keyframes toastPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(245,180,40,0.15), 0 0 40px rgba(245,180,40,0.4), 0 12px 40px rgba(0,0,0,0.7); }
+    50%       { box-shadow: 0 0 0 8px rgba(245,180,40,0.35), 0 0 70px rgba(245,180,40,0.7), 0 12px 40px rgba(0,0,0,0.7); }
+  }
+  @keyframes toastProgress {
+    from { width: 100%; }
+    to   { width: 0%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<header>
+  <div class="logo">דוד &amp; אביטל</div>
+  <h1 id="title">טוענת...</h1>
+  <p id="subtitle"></p>
+  <div class="divider"></div>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<footer>
+  <div class="logo logo-footer">דוד &amp; אביטל</div>
+  <span class="footer-text">כל נורה היא יום של ציפייה</span>
+
+</footer>
+
+<script>
+  const WEDDING = new Date('2026-08-09T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  WEDDING.setHours(0, 0, 0, 0);
+
+  const daysLeft = Math.round((WEDDING - today) / 86400000);
+  const litCount = daysLeft <= 0 ? 30 : daysLeft > 30 ? 0 : 30 - daysLeft;
+
+  const titleEl = document.getElementById('title');
+  const subEl   = document.getElementById('subtitle');
+
+  if (daysLeft <= 0) {
+    titleEl.textContent = '🎉 היום החתונה! 🎉';
+    subEl.textContent   = 'כל האורות דולקים לכבודך';
+    document.body.classList.add('wedding-day');
+  } else if (daysLeft > 30) {
+    titleEl.textContent = 'הספירה עוד לא התחילה';
+    subEl.textContent   = `${daysLeft} יום לחתונה`;
+  } else {
+    titleEl.textContent = `עוד ${daysLeft} ${daysLeft === 1 ? 'יום' : 'יום'} – וכולנו באורות`;
+    subEl.textContent = '';
+  }
+
+  const grid = document.getElementById('grid');
+
+  // SVG defs (gradient) – מוסיפים פעם אחת
+  const svgDefs = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svgDefs.style.cssText = 'position:absolute;width:0;height:0';
+  svgDefs.innerHTML = `<defs>
+    <radialGradient id="unlitGrad" cx="38%" cy="28%" r="72%">
+      <stop offset="0%"   stop-color="#55555f"/>
+      <stop offset="45%"  stop-color="#3a3a42"/>
+      <stop offset="100%" stop-color="#22222a"/>
+    </radialGradient>
+    <radialGradient id="unlitBevel" cx="50%" cy="50%" r="50%">
+      <stop offset="60%"  stop-color="transparent"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.35)"/>
+    </radialGradient>
+    <radialGradient id="litGrad" cx="38%" cy="32%" r="62%">
+      <stop offset="0%"   stop-color="#fffde0"/>
+      <stop offset="30%"  stop-color="#ffd84a"/>
+      <stop offset="70%"  stop-color="#f5a800"/>
+      <stop offset="100%" stop-color="#c06800"/>
+    </radialGradient>
+  </defs>`;
+  document.body.prepend(svgDefs);
+
+  // ספירה לאחור בזמן אמתי
+  const WEDDING_TIME = new Date('2026-08-09T18:30:00');
+  const pad = n => String(n).padStart(2, '0');
+
+  function updateTimer() {
+    const diff = WEDDING_TIME - new Date();
+    if (diff <= 0) {
+      document.getElementById('timer').innerHTML = '<span style="color:#c8a84b;font-size:clamp(0.7rem,1.8vh,1rem);letter-spacing:2px">🎉 מזל טוב!</span>';
+      return;
+    }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    document.getElementById('t-days').textContent  = pad(d);
+    document.getElementById('t-hours').textContent = pad(h);
+    document.getElementById('t-mins').textContent  = pad(m);
+    document.getElementById('t-secs').textContent  = pad(s);
+  }
+
+  // ניצנוצים בתנועת עכבר
+  const SHAPES = ['✦', '★', '•', '◆', '✴', '✩'];
+  const COLORS = ['#f5d98b', '#f5c030', '#fff5a0', '#e8a830', '#ffffff', '#c8a84b'];
+  let lastSparkle = 0;
+
+  document.addEventListener('mousemove', e => {
+    const now = Date.now();
+    if (now - lastSparkle < 80) return;
+    lastSparkle = now;
+
+    const el = document.createElement('span');
+    el.className = 'sparkle';
+    el.textContent = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+
+    const size = 10 + Math.random() * 14;
+    const dx   = (Math.random() - 0.5) * 60;
+    const dy   = -20 - Math.random() * 50;
+    const dr   = (Math.random() - 0.5) * 360 + 'deg';
+
+    el.style.cssText = `
+      left: ${e.clientX}px;
+      top: ${e.clientY}px;
+      font-size: ${size}px;
+      color: ${COLORS[Math.floor(Math.random() * COLORS.length)]};
+      --dx: ${dx}px;
+      --dy: ${dy}px;
+      --dr: ${dr};
+    `;
+
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
   });
-}
 
-// ===== לחיצה על התראה =====
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      // אם הדף פתוח — העבר אליו
-      const existing = list.find(c => c.url.includes('wedding') || c.url.includes('אביטל'));
-      if (existing) return existing.focus();
-      // אחרת פתח חדש
-      return clients.openWindow(self.location.origin + '/wedding/');
-    })
-  );
-});
+  const ONES  = ['','א','ב','ג','ד','ה','ו','ז','ח','ט'];
+  const TENS  = ['','י','כ','ל'];
+  // מיוחדים: 15=טו, 16=טז
+  function numToHebrew(n) {
+    if (n === 15) return 'ט״ו';
+    if (n === 16) return 'ט״ז';
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    const s = (TENS[t] || '') + (ONES[o] || '');
+    if (s.length === 1) return s + '׳';
+    return s.slice(0, -1) + '״' + s.slice(-1);
+  }
+
+  function hebrewDate(d) {
+    const parts = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long' }).formatToParts(d);
+    const day   = parts.find(p => p.type === 'day').value.replace(/[^0-9]/g, '');
+    const month = parts.find(p => p.type === 'month').value;
+    return numToHebrew(parseInt(day)) + ' ' + month;
+  }
+
+  const svgBulb = (index) => `
+    <svg viewBox="0 0 52 74" xmlns="http://www.w3.org/2000/svg" style="--i:${index}">
+      <line class="bulb-wire" x1="26" y1="0" x2="26" y2="5" stroke-width="1.2"/>
+      <path class="bulb-glass" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+      <path class="bulb-bevel" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+      <path class="bulb-glass-stroke" d="M26 5 C13 5 7 15 7 24 C7 33 13 41 19 46 L19 53 L33 53 L33 46 C39 41 45 33 45 24 C45 15 39 5 26 5 Z"/>
+      <ellipse class="bulb-inner-ring" cx="26" cy="26" rx="13" ry="14"/>
+      <path class="bulb-shine" d="M15 13 C18 9 24 8 28 9 C25 11 19 14 16 19 Z"/>
+      <path class="bulb-shine2" d="M31 10 C33 10 35 12 35 14 C34 13 32 12 31 10 Z"/>
+      <path class="bulb-shine3" d="M10 22 C9 26 10 31 11 34 C10 30 10 25 11 22 Z"/>
+      <polyline class="bulb-filament-c" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline class="bulb-filament" points="22,50 22,40 26,34 30,40 30,50" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect class="bulb-base" x="19" y="53" width="14" height="4" rx="1"/>
+      <rect class="bulb-base" x="20" y="57" width="12" height="4" rx="1"/>
+      <rect class="bulb-cap"  x="21" y="61" width="10" height="4" rx="2"/>
+      <line class="bulb-base-line" x1="19" y1="55" x2="33" y2="55" stroke-width="0.5"/>
+      <line class="bulb-base-line" x1="20" y1="59" x2="32" y2="59" stroke-width="0.5"/>
+    </svg>`;
+
+  // נורת יום החתונה
+  const weddingWrap = document.createElement('div');
+  const isWeddingLit = daysLeft <= 0;
+  weddingWrap.className = 'bulb-wrap wedding' + (isWeddingLit ? ' lit' : '');
+  weddingWrap.innerHTML = `
+    ${svgBulb(30)}
+    <span class="bulb-day">0</span>
+    <span class="bulb-hdate"><span style="background:linear-gradient(135deg,#f5d98b,#c8860a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 4px rgba(245,180,40,0.6))">💍 יום החתונה</span></span>
+  `;
+
+  const timerCard = document.createElement('div');
+  timerCard.className = 'timer-card';
+  timerCard.innerHTML = `
+    <span class="timer-card-label">ספירה לאחור</span>
+    <div class="timer" id="timer">
+      <div class="timer-unit"><span class="timer-num" id="t-secs">--</span><span class="timer-label">שניות</span></div>
+      <span class="timer-sep">:</span>
+      <div class="timer-unit"><span class="timer-num" id="t-mins">--</span><span class="timer-label">דקות</span></div>
+      <span class="timer-sep">:</span>
+      <div class="timer-unit"><span class="timer-num" id="t-hours">--</span><span class="timer-label">שעות</span></div>
+      <span class="timer-sep">:</span>
+      <div class="timer-unit"><span class="timer-num" id="t-days">--</span><span class="timer-label">ימים</span></div>
+    </div>
+  `;
+  for (let day = 30; day >= 1; day--) {
+    const index   = 30 - day + 1;
+    const isLit   = daysLeft > 0 && day <= 30 && day >= daysLeft;
+    const isToday = daysLeft > 0 && daysLeft <= 30 && day === daysLeft;
+
+    const bulbDate = new Date('2026-08-09T12:00:00');
+    bulbDate.setDate(bulbDate.getDate() - day);
+    const heDate = hebrewDate(bulbDate);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bulb-wrap' + (isLit ? ' lit' : '') + (isToday ? ' today' : '');
+
+    wrap.innerHTML = `
+      ${svgBulb(index)}
+      <span class="bulb-day">${day}</span>
+      <span class="bulb-hdate">${heDate}</span>
+    `;
+
+    grid.appendChild(wrap);
+  }
+
+  grid.appendChild(weddingWrap);
+  grid.appendChild(timerCard);
+
+  updateTimer();
+  setInterval(updateTimer, 1000);
+</script>
+
+<!-- ===== JOURNAL MODAL ===== -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">יומן – יום 1</div>
+      <button class="modal-close" id="modal-close-btn" aria-label="סגור">✕</button>
+    </div>
+    <ul class="task-list" id="task-list"></ul>
+    <div id="past-day-warning" style="
+      display:none; align-items:center; gap:8px;
+      background:rgba(200,100,0,0.12);
+      border:1px solid rgba(200,120,0,0.3);
+      border-radius:7px; padding:7px 12px;
+      color:#c8904a; font-size:0.8rem;
+      margin-bottom:10px; direction:rtl;
+    "></div>
+    <form class="add-task-form" onsubmit="return false;">
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <input type="time" id="input-time" />
+        <span id="input-time-hint" style="
+          font-size:0.7rem; color:#c8a84b; direction:rtl;
+          min-height:1em; text-align:center; letter-spacing:0.3px;
+        "></span>
+      </div>
+      <input type="text" id="input-text" placeholder="תיאור המשימה..." maxlength="80" />
+      <button class="btn-add" id="btn-add">+ הוסף</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ===== JOURNAL =====
+  const STORAGE_KEY = 'aviTal_journal_v1';
+  function loadJournal() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
+  function saveJournal(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+  let journal = loadJournal();
+
+  function getDayTasks(day) { if (!journal[day]) journal[day] = []; return journal[day]; }
+
+  // badge on each bulb
+  function refreshBadge(dayNum) {
+    const b = document.getElementById('jbadge-' + dayNum);
+    if (!b) return;
+    const n = getDayTasks(dayNum).length;
+    b.textContent = n > 9 ? '9+' : n;
+    b.classList.toggle('visible', n > 0);
+  }
+
+  function refreshAllBadges() {
+    Object.keys(journal).forEach(day => refreshBadge(Number(day)));
+  }
+
+  // add badge span + click listener to every bulb-wrap
+  document.querySelectorAll('.bulb-wrap').forEach(wrap => {
+    const daySpan = wrap.querySelector('.bulb-day');
+    if (!daySpan) return;
+    const dayNum = parseInt(daySpan.textContent);
+    if (isNaN(dayNum)) return;
+
+    const badge = document.createElement('span');
+    badge.className = 'task-badge';
+    badge.id = 'jbadge-' + dayNum;
+    wrap.style.position = 'relative';
+    wrap.appendChild(badge);
+    refreshBadge(dayNum);
+
+    wrap.addEventListener('click', () => openJournal(dayNum));
+  });
+
+  // modal elements
+  const overlay   = document.getElementById('modal-overlay');
+  const modalTitle = document.getElementById('modal-title');
+  const taskListEl = document.getElementById('task-list');
+  const inputTime  = document.getElementById('input-time');
+  const inputText  = document.getElementById('input-text');
+  let currentDay = null;
+
+  function openJournal(dayNum) {
+    currentDay = dayNum;
+
+    // חשב טווח התאריכים של היום
+    const { start, end } = getWeddingDayRange(dayNum);
+    const fmt = d => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    const startTime = '18:30';
+    const endTime   = '18:29';
+    const rangeStr  = `${fmt(start)} ${startTime} – ${fmt(new Date(end.getTime() + 60000))} ${endTime}`;
+
+    modalTitle.textContent = `יומן – יום ${dayNum}`;
+    modalTitle.title = rangeStr; // tooltip
+
+    // הוסף שורת טווח מתחת לכותרת
+    let rangeEl = document.getElementById('modal-day-range');
+    if (!rangeEl) {
+      rangeEl = document.createElement('div');
+      rangeEl.id = 'modal-day-range';
+      rangeEl.style.cssText = `
+        font-size:0.72rem; color:#6a5030; margin-top:3px;
+        letter-spacing:0.5px; direction:rtl;`;
+      modalTitle.parentNode.insertBefore(rangeEl, modalTitle.nextSibling);
+    }
+    rangeEl.textContent = rangeStr;
+
+    renderTasks();
+    overlay.classList.add('open');
+
+    // בדוק אם היום עבר לפי מחזור 18:30
+    const pastWarning = document.getElementById('past-day-warning');
+    if (end < new Date()) {
+      pastWarning.style.display = 'flex';
+      pastWarning.textContent = `⚠️ יום ${dayNum} כבר עבר — משימות חדשות לא יתריעו`;
+    } else {
+      pastWarning.style.display = 'none';
+    }
+
+    setTimeout(() => inputText.focus(), 60);
+  }
+
+  function closeJournal() {
+    overlay.classList.remove('open');
+    currentDay = null;
+    inputTime.value = '';
+    inputText.value = '';
+  }
+
+  document.getElementById('modal-close-btn').addEventListener('click', closeJournal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeJournal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeJournal(); });
+
+  function renderTasks() {
+    taskListEl.innerHTML = '';
+    const tasks = getDayTasks(currentDay);
+    if (tasks.length === 0) {
+      taskListEl.innerHTML = '<li class="no-tasks-msg">אין משימות עדיין — הוסיפי למטה ✨</li>';
+      return;
+    }
+    [...tasks]
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+      .forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'task-item' + (task.done ? ' done' : '') + (task.snoozed ? ' snoozed' : '');
+        li.dataset.id = task.id;
+        li.innerHTML = `
+          <div class="task-check${task.done ? ' checked' : ''}" data-id="${task.id}"></div>
+          ${task.time ? `<span class="task-time">${task.time}${task.snoozed ? ' 💤' : ''}</span>` : ''}
+          <span class="task-text">${esc(task.text)}</span>
+          <div class="task-actions">
+            <button class="task-btn task-edit"  title="ערוך">✏️</button>
+            <button class="task-btn task-snooze" title="דחה">💤</button>
+            <button class="task-btn task-delete" title="מחק">🗑️</button>
+          </div>`;
+
+        li.querySelector('.task-check') .addEventListener('click', () => toggleTask(task.id));
+        li.querySelector('.task-edit')  .addEventListener('click', () => startEditTask(li, task));
+        li.querySelector('.task-snooze').addEventListener('click', () => showSnoozePanel(li, task));
+        li.querySelector('.task-delete').addEventListener('click', () => deleteTask(task.id));
+        taskListEl.appendChild(li);
+      });
+  }
+
+  // ===== EDIT INLINE =====
+  function startEditTask(li, task) {
+    li.innerHTML = `
+      <input type="time" class="edit-time" value="${task.time || ''}"
+        style="width:95px;padding:5px 8px;border:1px solid rgba(200,168,75,0.4);border-radius:6px;
+               background:rgba(255,255,255,0.06);color:#f0e0c0;font-family:'Heebo',sans-serif;font-size:0.85rem;direction:ltr;"/>
+      <input type="text" class="edit-text" value="${task.text}" maxlength="80"
+        style="flex:1;padding:5px 10px;border:1px solid rgba(200,168,75,0.4);border-radius:6px;
+               background:rgba(255,255,255,0.06);color:#f0e0c0;font-family:'Heebo',sans-serif;font-size:0.85rem;"/>
+      <button class="task-btn edit-save"   title="שמור">✓</button>
+      <button class="task-btn edit-cancel" title="בטל">✕</button>`;
+
+    li.style.alignItems = 'center';
+    li.style.gap = '8px';
+    li.style.display = 'flex';
+
+    const editText = li.querySelector('.edit-text');
+    const editTime = li.querySelector('.edit-time');
+    editText.focus();
+    editText.setSelectionRange(editText.value.length, editText.value.length);
+
+    const save = () => {
+      const newText = editText.value.trim();
+      if (!newText) { editText.focus(); return; }
+      const t = getDayTasks(currentDay).find(t => t.id === task.id);
+      if (t) {
+        t.text = newText;
+        t.time = editTime.value;
+        t.dismissed = false; // אפשר להתריע שוב
+        saveJournal(journal);
+      }
+      renderTasks();
+      refreshBadge(currentDay);
+    };
+
+    li.querySelector('.edit-save')  .addEventListener('click', save);
+    li.querySelector('.edit-cancel').addEventListener('click', () => renderTasks());
+    editText.addEventListener('keydown', e => {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') renderTasks();
+    });
+  }
+
+  // ===== SNOOZE PANEL =====
+  function showSnoozePanel(li, task) {
+    // סגור פאנל קיים אם פתוח
+    document.querySelectorAll('.snooze-panel').forEach(p => p.remove());
+
+    const panel = document.createElement('div');
+    panel.className = 'snooze-panel';
+    panel.style.cssText = `
+      position:absolute; left:0; right:0; top:100%;
+      background:linear-gradient(135deg,#1e160a,#2a1e0e);
+      border:1px solid rgba(200,168,75,0.35);
+      border-radius:0 0 8px 8px; padding:10px 12px;
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      z-index:100; direction:rtl;`;
+    panel.innerHTML = `
+      <span style="color:#c8a84b;font-size:0.8rem;font-weight:700;">💤 דחה ל:</span>
+      <button class="snooze-opt" data-min="10">+10 דק׳</button>
+      <button class="snooze-opt" data-min="30">+30 דק׳</button>
+      <button class="snooze-opt" data-min="60">+שעה</button>
+      <button class="snooze-opt" data-min="120">+2 שעות</button>
+      <button class="snooze-cancel" style="margin-right:auto;background:none;border:none;
+        color:#6a4020;cursor:pointer;font-size:0.9rem;">✕</button>`;
+
+    li.style.position = 'relative';
+    li.appendChild(panel);
+
+    panel.querySelectorAll('.snooze-opt').forEach(btn => {
+      btn.style.cssText = `background:rgba(200,168,75,0.15);color:#c8a84b;
+        border:1px solid rgba(200,168,75,0.3);border-radius:5px;
+        padding:4px 10px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:0.8rem;`;
+      btn.addEventListener('click', () => {
+        const mins = parseInt(btn.dataset.min);
+        snoozeTask(task, mins);
+        panel.remove();
+      });
+    });
+    panel.querySelector('.snooze-cancel').addEventListener('click', () => panel.remove());
+  }
+
+  function snoozeTask(task, minutes) {
+    const t = getDayTasks(currentDay).find(t => t.id === task.id);
+    if (!t) return;
+    const base = t.time ? new Date(`2000-01-01T${t.time}`) : new Date();
+    base.setMinutes(base.getMinutes() + minutes);
+    t.time = String(base.getHours()).padStart(2,'0') + ':' + String(base.getMinutes()).padStart(2,'0');
+    t.dismissed = false; // תתרה שוב בשעה החדשה
+    t.snoozed = true;
+    saveJournal(journal);
+    renderTasks();
+    refreshBadge(currentDay);
+    showToast('נדחה 💤', `"${task.text}" נדחה ל-${t.time}`, '');
+  }
+
+  function addTask(time, text) {
+    getDayTasks(currentDay).push({ id: Date.now().toString(), time, text, done: false });
+    saveJournal(journal);
+    renderTasks();
+    refreshBadge(currentDay);
+
+    // אם השעה אחרי 18:29 — הצג תאריך מדויק כדי שהמשתמש ידע בדיוק מתי
+    if (time && time >= '18:30') {
+      const { start } = getWeddingDayRange(currentDay);
+      // start = יום ושעה שבו מתחיל "יום currentDay" (18:30)
+      // משימה בשעה >= 18:30 שייכת ל-start עצמו
+      const taskDate = new Date(start);
+      const [h, m] = time.split(':').map(Number);
+      taskDate.setHours(h, m, 0, 0);
+      const dateStr = taskDate.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+      showToast(
+        `📌 יום ${currentDay}`,
+        `המשימה נקבעה ל${dateStr} בשעה ${time}`,
+        ''
+      );
+    }
+  }
+
+  function toggleTask(id) {
+    const t = getDayTasks(currentDay).find(t => t.id === id);
+    if (t) { t.done = !t.done; saveJournal(journal); renderTasks(); }
+  }
+
+  function deleteTask(id) {
+    journal[currentDay] = getDayTasks(currentDay).filter(t => t.id !== id);
+    saveJournal(journal);
+    renderTasks();
+    refreshBadge(currentDay);
+  }
+
+  document.getElementById('btn-add').addEventListener('click', () => {
+    const text = inputText.value.trim();
+    if (!text) { inputText.focus(); return; }
+    addTask(inputTime.value, text);
+    inputText.value = '';
+    inputTime.value = '';
+    document.getElementById('input-time-hint').textContent = '';
+    inputText.focus();
+  });
+  inputText.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-add').click(); });
+
+  // הצג תאריך מדויק כשבוחרים שעה
+  inputTime.addEventListener('input', () => {
+    const hint = document.getElementById('input-time-hint');
+    if (!inputTime.value || currentDay === null) { hint.textContent = ''; return; }
+    const { start } = getWeddingDayRange(currentDay);
+    const [h, m] = inputTime.value.split(':').map(Number);
+    const taskDate = new Date(start);
+    taskDate.setHours(h, m, 0, 0);
+    // שעות לפני 18:30 שייכות ליום המחרת (היום הגרגוריאני הבא)
+    if (h < 18 || (h === 18 && m < 30)) {
+      taskDate.setDate(taskDate.getDate() + 1);
+    }
+    hint.textContent = taskDate.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  });
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ===== NOTIFICATIONS =====
+
+  // 1. בקש הרשאה להתראות מערכת
+  let notifPermission = 'default';
+  if ('Notification' in window) {
+    notifPermission = Notification.permission;
+    if (notifPermission === 'default') {
+      Notification.requestPermission().then(p => { notifPermission = p; });
+    }
+  }
+
+  // 2. Toast על המסך
+  function showToast(title, text, time) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.style.position = 'relative';
+    toast.innerHTML = `
+      <button class="toast-close" title="סגור">✕</button>
+      <div class="toast-title">⏰ ${title}</div>
+      <div class="toast-body">
+        <span class="toast-icon">💍</span>
+        <div class="toast-text">
+          ${esc(text)}
+          ${time ? `<div class="toast-time">${time}</div>` : ''}
+        </div>
+      </div>
+      <div class="toast-progress"></div>`;
+
+    toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
+    toastContainer.appendChild(toast);
+
+    // נעלם אוטומטית אחרי 15 שניות
+    setTimeout(() => dismissToast(toast), 15000);
+  }
+
+  function dismissToast(toast) {
+    if (!toast.parentNode) return;
+    toast.classList.add('hiding');
+    toast.addEventListener('animationend', () => toast.remove(), { once: true });
+  }
+
+  // 3. התראת מערכת
+  function showSystemNotif(text, time) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    new Notification('💍 תזכורת חתונה', {
+      body: time ? `${time} — ${text}` : text,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💍</text></svg>',
+      tag: 'wedding-reminder-' + Date.now(),
+      requireInteraction: true
+    });
+  }
+
+  // 4. שלח את כל ההתראות ביחד
+  let titleFlashInterval = null;
+
+  function flashTitle(text) {
+    const original = document.title;
+    let toggle = false;
+    if (titleFlashInterval) clearInterval(titleFlashInterval);
+    titleFlashInterval = setInterval(() => {
+      document.title = toggle ? `⏰ ${text}` : original;
+      toggle = !toggle;
+    }, 800);
+    // עצור אחרי 30 שניות
+    setTimeout(() => {
+      clearInterval(titleFlashInterval);
+      document.title = original;
+    }, 30000);
+  }
+
+  // AudioContext — נוצר בלחיצה ראשונה כדי לעקוף חסימת Autoplay
+  let _audioCtx = null;
+  document.addEventListener('click', () => {
+    if (!_audioCtx) {
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+  }, { once: false });
+
+  function playBeep() {
+    if (!_audioCtx) return; // לא ניתן לנגן לפני אינטראקציה
+    try {
+      const ctx = _audioCtx;
+      if (ctx.state === 'suspended') ctx.resume();
+      const notes = [523, 659, 784]; // C5 E5 G5
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.18);
+        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + i * 0.18 + 0.05);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + i * 0.18 + 0.25);
+        osc.start(ctx.currentTime + i * 0.18);
+        osc.stop(ctx.currentTime + i * 0.18 + 0.3);
+      });
+    } catch(e) {}
+  }
+
+  function fireReminder(task) {
+    const label = `תזכורת ליום ${task.day}`;
+    showReminderToast(label, task);
+    showSystemNotif(task.text, task.time);
+    flashTitle(task.text);
+    playBeep();
+  }
+
+  function showReminderToast(title, task) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.style.position = 'relative';
+    toast.innerHTML = `
+      <div class="toast-title">⏰ ${title}</div>
+      <div class="toast-body">
+        <span class="toast-icon">💍</span>
+        <div class="toast-text">
+          ${esc(task.text)}
+          ${task.time ? `<div class="toast-time">${task.time}</div>` : ''}
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end">
+        <button class="btn-done-toast" style="
+          background:linear-gradient(135deg,#c8a84b,#8a6020);
+          color:#fff8d0; border:none; border-radius:6px;
+          padding:5px 14px; cursor:pointer; font-family:'Heebo',sans-serif;
+          font-size:0.82rem; font-weight:700;">בוצע ✓</button>
+        <button class="btn-dismiss-toast" style="
+          background:rgba(255,255,255,0.07); color:#a08060;
+          border:1px solid rgba(200,168,75,0.3); border-radius:6px;
+          padding:5px 14px; cursor:pointer; font-family:'Heebo',sans-serif;
+          font-size:0.82rem;">התעלם</button>
+      </div>
+      <div class="toast-progress"></div>`;
+
+    // בוצע — סמן done
+    toast.querySelector('.btn-done-toast').addEventListener('click', () => {
+      const j = loadJournal();
+      const t = (j[task.day] || []).find(t => t.id === task.id);
+      if (t) { t.done = true; saveJournal(j); journal = j; refreshAllBadges(); }
+      dismissToast(toast);
+      showToast('עודכן ✓', `"${task.text}" סומן כבוצע`, '');
+    });
+
+    // התעלם — סמן dismissed
+    toast.querySelector('.btn-dismiss-toast').addEventListener('click', () => {
+      autoDismissTask(task);
+      dismissToast(toast);
+    });
+
+    toastContainer.appendChild(toast);
+
+    // נסגר אוטומטית → dismissed
+    const timer = setTimeout(() => {
+      autoDismissTask(task);
+      dismissToast(toast);
+    }, 15000);
+
+    // אם לחץ בוצע/התעלם ידנית — בטל את ה-auto
+    toast.addEventListener('click', () => clearTimeout(timer), { once: true });
+  }
+
+  function autoDismissTask(task) {
+    const j = loadJournal();
+    const t = (j[task.day] || []).find(t => t.id === task.id);
+    if (t && !t.done) { t.dismissed = true; saveJournal(j); journal = j; }
+  }
+
+  // ===== לוגיקת יום חתונה (מחזור 18:30–18:29) =====
+  const WEDDING_DAY = new Date('2026-08-09T18:30:00'); // החתונה
+
+  /**
+   * מחזיר את מספר "יום החתונה" הנוכחי לפי מחזור 18:30.
+   * יום N מתחיל ב-18:30 של N ימים לפני החתונה
+   * ומסתיים ב-18:29 של N-1 ימים לפני.
+   * מחזיר null אם לא בטווח 1–30.
+   */
+  function getCurrentWeddingDay() {
+    const now = new Date();
+    // "תחילת יום" = 18:30 של אותו לוח-יהודי
+    // אם השעה לפני 18:30 — אנחנו עדיין ב"יום" של אתמול בערב
+    const dayStart = new Date(now);
+    if (now.getHours() < 18 || (now.getHours() === 18 && now.getMinutes() < 30)) {
+      dayStart.setDate(dayStart.getDate() - 1);
+    }
+    dayStart.setHours(18, 30, 0, 0);
+
+    // כמה ימים עד החתונה מ-dayStart
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const diff = Math.round((WEDDING_DAY - dayStart) / msPerDay);
+    if (diff < 1 || diff > 30) return null;
+    return diff;
+  }
+
+  /**
+   * בהינתן מספר יום (1–30) מחזיר את טווח ה-Date שלו.
+   * { start: Date(18:30 של N ימים לפני), end: Date(18:29 של N-1 ימים לפני) }
+   */
+  function getWeddingDayRange(dayNum) {
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const start = new Date(WEDDING_DAY - dayNum * msPerDay);
+    start.setHours(18, 30, 0, 0);
+    const end = new Date(start.getTime() + msPerDay - 60000); // 18:29 למחרת
+    return { start, end };
+  }
+
+  // 5. טיימר — בודק כל 15 שניות אם יש משימה בשעה הזו
+  const firedReminders = new Set();
+
+  function checkReminders() {
+    const freshJournal = loadJournal();
+    const now = new Date();
+    const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const currentDay = getCurrentWeddingDay(); // היום הנוכחי לפי מחזור 18:30
+
+    let fired = 0;
+    Object.entries(freshJournal).forEach(([day, tasks]) => {
+      // רק התרה לימים שבמחזור הנוכחי
+      if (parseInt(day) !== currentDay) return;
+      tasks.forEach(task => {
+        if (!task.time || task.done) return;
+        const key = `${day}-${task.id}-${nowStr}`;
+        if (task.time === nowStr && !firedReminders.has(key)) {
+          firedReminders.add(key);
+          fireReminder({ day, text: task.text, time: task.time });
+          fired++;
+        }
+      });
+    });
+    console.log(`[תזכורות] בדיקה בשעה ${nowStr} (יום ${currentDay}) — נשלחו: ${fired}`);
+  }
+
+  // חשוף לקונסול לבדיקה
+  window.checkReminders = checkReminders;
+  window.showToast = showToast;
+  window.testToast = () => showToast('בדיקה', 'זו הודעת בדיקה!', new Date().toTimeString().slice(0,5));
+
+  checkReminders();
+  setInterval(checkReminders, 15000);
+
+  // ===== משימות שפוספסו =====
+  function checkMissedTasks() {
+    const freshJournal = loadJournal();
+    journal = freshJournal;
+
+    const now = new Date();
+    const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const currentWeddingDay = getCurrentWeddingDay();
+    const missed = [];
+
+    Object.entries(freshJournal).forEach(([day, tasks]) => {
+      if (!Array.isArray(tasks)) return;
+      const dayNum = parseInt(day);
+      const { start, end } = getWeddingDayRange(dayNum);
+
+      tasks.forEach(task => {
+        if (!task.time || task.done || task.dismissed) return;
+
+        // בנה תאריך מלא של המשימה בתוך הטווח של היום שלה
+        const taskDate = new Date(start);
+        const [h, m] = task.time.split(':').map(Number);
+        taskDate.setHours(h, m, 0, 0);
+        // אם השעה לפני 18:30 — המשימה שייכת ל"מחרת" (יום לאחר start)
+        if (h < 18 || (h === 18 && m < 30)) {
+          taskDate.setDate(taskDate.getDate() + 1);
+        }
+
+        // פוספסה אם תאריך המשימה המלא כבר עבר
+        if (taskDate < now) {
+          missed.push({ day, ...task });
+        }
+      });
+    });
+
+    if (missed.length === 0) return;
+    missed.sort((a, b) => b.time.localeCompare(a.time));
+
+    const banner = document.createElement('div');
+    banner.id = 'missed-banner';
+    banner.style.cssText = `
+      position:fixed; top:16px; left:50%; transform:translateX(-50%);
+      z-index:9998; direction:rtl; text-align:right;
+      background:linear-gradient(135deg,#1e160a,#2a1e0e);
+      border:2px solid rgba(200,100,50,0.7);
+      border-top-color:rgba(255,160,80,0.8);
+      border-radius:14px; padding:16px 20px;
+      color:#f0e0c0; font-family:'Heebo',sans-serif;
+      font-size:clamp(0.82rem,1.8vh,1rem);
+      box-shadow:0 0 30px rgba(200,80,0,0.3),0 8px 30px rgba(0,0,0,0.6);
+      max-width:min(480px,94vw); min-width:min(320px,88vw);
+      max-height:80vh; overflow-y:auto;
+      animation:toastIn 0.4s cubic-bezier(.4,0,.2,1) forwards;
+    `;
+
+    // כותרת + כפתור סגירה
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+    header.innerHTML = `
+      <span style="font-weight:700;color:#f5a050;font-size:0.9rem;letter-spacing:1px">
+        ⚠️ פספסת ${missed.length} משימה${missed.length > 1 ? 'ות' : ''}
+      </span>
+      <button id="banner-close-x" style="background:none;border:none;color:#6a4020;font-size:1.1rem;cursor:pointer;">✕</button>`;
+    banner.appendChild(header);
+
+    // שורה לכל משימה
+    const taskContainer = document.createElement('div');
+    missed.forEach(task => {
+      const row = document.createElement('div');
+      row.dataset.taskId = task.id;
+      row.dataset.taskDay = task.day;
+      row.style.cssText = `
+        display:flex; align-items:center; gap:8px;
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(200,168,75,0.15);
+        border-radius:8px; padding:8px 10px; margin-bottom:7px;`;
+      row.innerHTML = `
+        <div style="flex:1;min-width:0;">
+          <span style="color:#c8a84b;font-weight:700;font-size:0.78rem;">${task.time}</span>
+          <span style="color:#8a7040;font-size:0.75rem;margin-right:4px;">יום ${task.day}</span>
+          <div style="color:#f0e0c0;font-size:0.88rem;margin-top:2px;word-break:break-word;">${esc(task.text)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+          <button class="row-done" style="
+            background:linear-gradient(135deg,#5a8a20,#3a5a10);
+            color:#d0f0a0;border:none;border-radius:5px;
+            padding:4px 10px;cursor:pointer;font-family:'Heebo',sans-serif;
+            font-size:0.75rem;font-weight:700;white-space:nowrap;">✓ בוצע</button>
+          <button class="row-dismiss" style="
+            background:rgba(255,255,255,0.06);color:#8a7040;
+            border:1px solid rgba(200,168,75,0.25);border-radius:5px;
+            padding:4px 10px;cursor:pointer;font-family:'Heebo',sans-serif;
+            font-size:0.75rem;white-space:nowrap;">התעלם</button>
+        </div>`;
+
+      row.querySelector('.row-done').addEventListener('click', () => {
+        updateTaskField(task.day, task.id, 'done', true);
+        row.style.opacity = '0.4';
+        row.style.pointerEvents = 'none';
+        checkIfBannerEmpty(banner, taskContainer);
+      });
+
+      row.querySelector('.row-dismiss').addEventListener('click', () => {
+        updateTaskField(task.day, task.id, 'dismissed', true);
+        row.style.opacity = '0.4';
+        row.style.pointerEvents = 'none';
+        checkIfBannerEmpty(banner, taskContainer);
+      });
+
+      taskContainer.appendChild(row);
+    });
+    banner.appendChild(taskContainer);
+
+    // כפתורי bulk בתחתית
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:10px;border-top:1px solid rgba(200,168,75,0.15);padding-top:10px;';
+    footer.innerHTML = `
+      <button id="banner-done-all" style="
+        background:linear-gradient(135deg,#8a4010,#5a2808);
+        color:#f0d0a0;border:none;border-radius:6px;
+        padding:6px 14px;cursor:pointer;font-family:'Heebo',sans-serif;
+        font-size:0.8rem;font-weight:700;">סמן הכל כבוצע ✓</button>
+      <button id="banner-dismiss-all" style="
+        background:rgba(255,255,255,0.07);color:#a08060;
+        border:1px solid rgba(200,168,75,0.3);border-radius:6px;
+        padding:6px 14px;cursor:pointer;font-family:'Heebo',sans-serif;
+        font-size:0.8rem;">התעלם מהכל</button>`;
+    banner.appendChild(footer);
+    document.body.appendChild(banner);
+
+    // event listeners
+    banner.querySelector('#banner-close-x').addEventListener('click', () => banner.remove());
+
+    banner.querySelector('#banner-done-all').addEventListener('click', () => {
+      missed.forEach(t => updateTaskField(t.day, t.id, 'done', true));
+      refreshAllBadges();
+      banner.remove();
+      showToast('עודכן ✓', 'כל המשימות סומנו כבוצעות', '');
+    });
+
+    banner.querySelector('#banner-dismiss-all').addEventListener('click', () => {
+      missed.forEach(t => updateTaskField(t.day, t.id, 'dismissed', true));
+      banner.remove();
+    });
+  }
+
+  function updateTaskField(day, id, field, value) {
+    const j = loadJournal();
+    const t = (j[day] || []).find(t => t.id === id);
+    if (t) { t[field] = value; saveJournal(j); journal = j; }
+    if (field === 'done') refreshAllBadges();
+  }
+
+  function checkIfBannerEmpty(banner, container) {
+    const active = container.querySelectorAll('[style*="pointer-events: none"]');
+    const total  = container.querySelectorAll('[data-task-id]');
+    if (active.length >= total.length) {
+      setTimeout(() => banner.remove(), 600);
+    }
+  }
+
+  // בדוק פספוסים בטעינה (עם עיכוב קצר כדי שהדף יטען)
+  setTimeout(checkMissedTasks, 1500);
+
+  // ===== ONBOARDING — מוצג פעם אחת בלבד =====
+  const ONBOARDING_KEY = 'aviTal_onboarding_v1';
+  if (!localStorage.getItem(ONBOARDING_KEY)) {
+    setTimeout(() => {
+      const ob = document.createElement('div');
+      ob.id = 'onboarding-overlay';
+      ob.style.cssText = `
+        position:fixed; inset:0;
+        background:rgba(5,3,0,0.82);
+        z-index:3000;
+        display:flex; align-items:center; justify-content:center;
+        backdrop-filter:blur(5px);
+        animation:toastIn 0.4s cubic-bezier(.4,0,.2,1) forwards;
+      `;
+      ob.innerHTML = `
+        <div style="
+          background:linear-gradient(160deg,#1e160a,#2a1e0e);
+          border:1px solid rgba(200,168,75,0.45);
+          border-top-color:rgba(255,248,160,0.6);
+          border-radius:16px;
+          padding:28px 30px 24px;
+          width:min(460px,92vw);
+          direction:rtl;
+          box-shadow:0 0 60px rgba(245,180,40,0.18), 0 20px 60px rgba(0,0,0,0.7);
+          font-family:'Heebo',sans-serif;
+          color:#f0e0c0;
+        ">
+          <!-- כותרת -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;
+                      border-bottom:1px solid rgba(200,168,75,0.2);padding-bottom:14px;">
+            <span style="font-size:1.8rem;">📋</span>
+            <div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:600;
+                          background:linear-gradient(135deg,#f5d98b,#c8860a);
+                          -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                          background-clip:text;">יומן משימות</div>
+              <div style="font-size:0.72rem;color:#6a5030;letter-spacing:1px;margin-top:2px;">
+                פיצ׳ר חדש — כל נורה היא יום
+              </div>
+            </div>
+          </div>
+
+          <!-- הסבר -->
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px;font-size:0.88rem;line-height:1.7;color:#c8a870;">
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">💡</span>
+              <span><strong style="color:#f5d98b;">לחצי על כל נורה</strong> כדי לפתוח את היומן של אותו יום ולהוסיף משימות, תזכורות או הערות.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">⏰</span>
+              <span><strong style="color:#f5d98b;">הגדירי שעה למשימה</strong> — כשמגיע הזמן תקבלי התראה אוטומטית, גם אם הדפדפן מוזער.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">📅</span>
+              <span>כל יום מתחיל ב-<strong style="color:#f5d98b;">18:30</strong> ומסתיים ב-18:29 למחרת. בחירת שעה תציג את <strong style="color:#f5d98b;">התאריך המדויק</strong> כדי שלא תתבלבלי.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">🔢</span>
+              <span>מספר קטן על הנורה מראה <strong style="color:#f5d98b;">כמה משימות פתוחות</strong> ביום הזה.</span>
+            </div>
+
+          </div>
+
+          <!-- כפתור -->
+          <button id="onboarding-close" style="
+            width:100%;
+            padding:10px;
+            background:linear-gradient(135deg,#c8a84b,#8a6020);
+            color:#fff8d0; border:none; border-radius:8px;
+            cursor:pointer; font-family:'Heebo',sans-serif;
+            font-size:0.95rem; font-weight:700;
+            transition:filter 0.15s;
+          ">הבנתי, בואו נתחיל! ✨</button>
+        </div>`;
+
+      document.body.appendChild(ob);
+
+      const close = () => {
+        ob.style.animation = 'toastOut 0.3s cubic-bezier(.4,0,.2,1) forwards';
+        ob.addEventListener('animationend', () => ob.remove(), { once: true });
+        localStorage.setItem(ONBOARDING_KEY, '1');
+      };
+
+      document.getElementById('onboarding-close').addEventListener('click', close);
+      ob.addEventListener('click', e => { if (e.target === ob) close(); });
+    }, 800);
+  }
+
+  // בדוק גם כשחוזרים לטאב
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      // הסר בנר ישן אם קיים
+      document.getElementById('missed-banner')?.remove();
+      setTimeout(checkMissedTasks, 300);
+    }
+  });
+
+  // ===== SERVICE WORKER =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('[SW] נרשם בהצלחה:', reg.scope);
+        window._swReg = reg;
+
+        // בקש הרשאת Push אם עוד לא
+        if (Notification.permission === 'default') {
+          Notification.requestPermission().then(p => {
+            if (p === 'granted') showToast('התראות הופעלו! 🎉', 'תקבלי התראות גם כשהדפדפן מוזער', '');
+          });
+        }
+      })
+      .catch(err => console.warn('[SW] רישום נכשל:', err));
+  }
+
+  // שלח בדיקה ל-SW רק כשהדף מוסתר (minimize/tab switch)
+  // כשהדף גלוי — checkReminders() המקומי כבר מטפל
+  const swFired = new Set();
+
+  function swCheckReminders() {
+    // אם הדף גלוי — לא צריך SW, המקומי מספיק
+    if (!document.hidden) return;
+    if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+
+    const freshJournal = loadJournal();
+    const now = new Date();
+    const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const firedList = [...swFired];
+
+    navigator.serviceWorker.controller.postMessage({
+      type: 'CHECK_REMINDERS',
+      journal: freshJournal,
+      nowStr,
+      fired: firedList
+    });
+
+    // סמן כירו כדי שגם checkReminders() לא יכפיל
+    Object.entries(freshJournal).forEach(([day, tasks]) => {
+      if (!Array.isArray(tasks)) return;
+      tasks.forEach(task => {
+        if (task.time === nowStr && !task.done)
+          swFired.add(`${day}-${task.id}-${task.time}`);
+      });
+    });
+  }
+
+  setInterval(swCheckReminders, 30000);
+
+  // פתח חלון בלחיצה על התראת SW
+  navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'OPEN_APP') window.focus();
+  });
+
+  // כפתור בדיקה מהקונסול
+  window.testSwNotif = () => {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIF' });
+    } else {
+      alert('SW לא פעיל — נסה רק מ-https://');
+    }
+  };
+
+</script>
+</body>
+</html>
