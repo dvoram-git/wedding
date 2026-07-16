@@ -480,6 +480,259 @@
     line-height: 1;
     margin-bottom: 1.2em;
   }
+
+  /* ── JOURNAL MODAL ── */
+  .bulb-wrap { cursor: pointer; }
+  .bulb-wrap:hover { transform: scale(1.04); }
+  .bulb-wrap.wedding:hover { transform: scale(1.02); }
+
+  .task-badge {
+    position: absolute;
+    top: 5px; right: 5px;
+    background: #f5c030;
+    color: #1a1008;
+    font-size: 0.55rem;
+    font-weight: 700;
+    border-radius: 50%;
+    width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .task-badge.visible { opacity: 1; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 3, 0, 0.72);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.22s, visibility 0.22s;
+  }
+  .modal-overlay.open {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .modal {
+    background: #1a140a;
+    border: 1px solid rgba(200,168,75,0.35);
+    border-top-color: rgba(255,248,160,0.5);
+    border-radius: 14px;
+    padding: 24px 28px;
+    width: min(460px, 92vw);
+    max-height: 82vh;
+    overflow-y: auto;
+    box-shadow: 0 0 60px rgba(245,180,40,0.15), 0 20px 60px rgba(0,0,0,0.6);
+    position: relative;
+    direction: rtl;
+  }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(200,168,75,0.2);
+    padding-bottom: 12px;
+  }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem; font-weight: 600;
+    background: linear-gradient(135deg, #f5d98b, #c8860a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.3rem; color: #5a4820;
+    line-height: 1; padding: 2px 8px; border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .modal-close:hover { color: #f5d98b; background: rgba(200,168,75,0.1); }
+
+  .task-list { list-style: none; margin-bottom: 14px; min-height: 20px; }
+
+  .task-item {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(200,168,75,0.18);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 7px;
+    transition: opacity 0.2s;
+  }
+  .task-item.done { opacity: 0.4; }
+  .task-item.done .task-text { text-decoration: line-through; }
+
+  .task-check {
+    width: 17px; height: 17px;
+    border: 1.5px solid rgba(200,168,75,0.6);
+    border-radius: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .task-check.checked { background: #c8a84b; border-color: #c8a84b; }
+  .task-check.checked::after { content: '✓'; font-size: 0.65rem; color: #1a1008; font-weight: 700; }
+
+  .task-time {
+    font-size: 0.75rem; color: #c8a84b;
+    font-weight: 700; flex-shrink: 0; min-width: 40px;
+  }
+  .task-text { flex: 1; font-size: 0.85rem; color: #d0b880; word-break: break-word; }
+  .task-delete {
+    background: none; border: none; cursor: pointer;
+    color: #4a3820; font-size: 0.95rem; padding: 0 2px;
+    transition: color 0.15s; flex-shrink: 0;
+  }
+  .task-delete:hover { color: #c05030; }
+
+  .no-tasks-msg {
+    text-align: center; color: #4a3820;
+    font-size: 0.8rem; padding: 10px 0; font-style: italic;
+  }
+
+  .add-task-form {
+    display: flex; gap: 7px; flex-wrap: wrap;
+    border-top: 1px solid rgba(200,168,75,0.2);
+    padding-top: 12px;
+  }
+  .add-task-form input[type="time"],
+  .add-task-form input[type="text"] {
+    padding: 7px 11px;
+    border: 1px solid rgba(200,168,75,0.3);
+    border-radius: 6px; font-size: 0.85rem;
+    font-family: 'Heebo', sans-serif;
+    background: rgba(255,255,255,0.05);
+    color: #f0e0c0;
+    transition: border-color 0.15s;
+  }
+  .add-task-form input[type="time"] { width: 100px; direction: ltr; }
+  .add-task-form input[type="text"] { flex: 1; min-width: 130px; direction: rtl; }
+  .add-task-form input:focus {
+    outline: none; border-color: #c8a84b;
+    box-shadow: 0 0 0 2px rgba(200,168,75,0.15);
+  }
+  .add-task-form input::placeholder { color: #4a3820; }
+  .btn-add {
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #c8a84b, #8a6020);
+    color: #fff8d0; border: none; border-radius: 6px;
+    cursor: pointer; font-family: 'Heebo', sans-serif;
+    font-size: 0.85rem; font-weight: 700;
+    transition: filter 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { filter: brightness(1.2); transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+
+  /* ── TOAST NOTIFICATIONS ── */
+  #toast-container {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+  }
+
+  .toast {
+    background: linear-gradient(135deg, #1e160a, #2a1e0e);
+    border: 2px solid rgba(200,168,75,0.8);
+    border-top-color: rgba(255,248,160,0.9);
+    border-radius: 14px;
+    padding: 18px 24px 20px;
+    color: #f0e0c0;
+    font-family: 'Heebo', sans-serif;
+    font-size: clamp(0.9rem, 2vh, 1.1rem);
+    direction: rtl;
+    text-align: right;
+    box-shadow:
+      0 0 0 4px rgba(245,180,40,0.15),
+      0 0 40px rgba(245,180,40,0.4),
+      0 12px 40px rgba(0,0,0,0.7);
+    max-width: min(420px, 92vw);
+    min-width: min(320px, 85vw);
+    pointer-events: auto;
+    overflow: hidden;
+    animation: toastIn 0.4s cubic-bezier(.4,0,.2,1) forwards,
+               toastPulse 1s ease-in-out 0.5s 3;
+  }
+
+  .toast.hiding {
+    animation: toastOut 0.4s cubic-bezier(.4,0,.2,1) forwards;
+  }
+
+  .toast-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: #f5d98b;
+    margin-bottom: 8px;
+  }
+
+  .toast-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .toast-icon { font-size: 2rem; flex-shrink: 0; }
+  .toast-text { flex: 1; line-height: 1.5; font-size: 1rem; }
+
+  .toast-time {
+    font-size: 0.85rem;
+    color: #c8a84b;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .toast-close {
+    position: absolute;
+    top: 10px; left: 12px;
+    background: none; border: none;
+    color: #6a5030; font-size: 1.1rem;
+    cursor: pointer; line-height: 1;
+    pointer-events: auto;
+    transition: color 0.15s;
+  }
+  .toast-close:hover { color: #f5d98b; }
+
+  .toast-progress {
+    position: absolute;
+    bottom: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #c8a84b, #f5d98b);
+    border-radius: 0 0 14px 0;
+    animation: toastProgress 15s linear forwards;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(30px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(10px) scale(0.95); }
+  }
+  @keyframes toastPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(245,180,40,0.15), 0 0 40px rgba(245,180,40,0.4), 0 12px 40px rgba(0,0,0,0.7); }
+    50%       { box-shadow: 0 0 0 8px rgba(245,180,40,0.35), 0 0 70px rgba(245,180,40,0.7), 0 12px 40px rgba(0,0,0,0.7); }
+  }
+  @keyframes toastProgress {
+    from { width: 100%; }
+    to   { width: 0%; }
+  }
 </style>
 </head>
 <body>
@@ -690,5 +943,337 @@
   updateTimer();
   setInterval(updateTimer, 1000);
 </script>
+
+<!-- ===== JOURNAL MODAL ===== -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">יומן – יום 1</div>
+      <button class="modal-close" id="modal-close-btn" aria-label="סגור">✕</button>
+    </div>
+    <ul class="task-list" id="task-list"></ul>
+    <form class="add-task-form" onsubmit="return false;">
+      <input type="time" id="input-time" />
+      <input type="text" id="input-text" placeholder="תיאור המשימה..." maxlength="80" />
+      <button class="btn-add" id="btn-add">+ הוסף</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ===== JOURNAL =====
+  const STORAGE_KEY = 'aviTal_journal_v1';
+  function loadJournal() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
+  function saveJournal(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+  let journal = loadJournal();
+
+  function getDayTasks(day) { if (!journal[day]) journal[day] = []; return journal[day]; }
+
+  // badge on each bulb
+  function refreshBadge(dayNum) {
+    const b = document.getElementById('jbadge-' + dayNum);
+    if (!b) return;
+    const n = getDayTasks(dayNum).length;
+    b.textContent = n > 9 ? '9+' : n;
+    b.classList.toggle('visible', n > 0);
+  }
+
+  // add badge span + click listener to every bulb-wrap
+  document.querySelectorAll('.bulb-wrap').forEach(wrap => {
+    const daySpan = wrap.querySelector('.bulb-day');
+    if (!daySpan) return;
+    const dayNum = parseInt(daySpan.textContent);
+    if (isNaN(dayNum)) return;
+
+    const badge = document.createElement('span');
+    badge.className = 'task-badge';
+    badge.id = 'jbadge-' + dayNum;
+    wrap.style.position = 'relative';
+    wrap.appendChild(badge);
+    refreshBadge(dayNum);
+
+    wrap.addEventListener('click', () => openJournal(dayNum));
+  });
+
+  // modal elements
+  const overlay   = document.getElementById('modal-overlay');
+  const modalTitle = document.getElementById('modal-title');
+  const taskListEl = document.getElementById('task-list');
+  const inputTime  = document.getElementById('input-time');
+  const inputText  = document.getElementById('input-text');
+  let currentDay = null;
+
+  function openJournal(dayNum) {
+    currentDay = dayNum;
+    modalTitle.textContent = `יומן – יום ${dayNum}`;
+    renderTasks();
+    overlay.classList.add('open');
+    setTimeout(() => inputText.focus(), 60);
+  }
+
+  function closeJournal() {
+    overlay.classList.remove('open');
+    currentDay = null;
+    inputTime.value = '';
+    inputText.value = '';
+  }
+
+  document.getElementById('modal-close-btn').addEventListener('click', closeJournal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeJournal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeJournal(); });
+
+  function renderTasks() {
+    taskListEl.innerHTML = '';
+    const tasks = getDayTasks(currentDay);
+    if (tasks.length === 0) {
+      taskListEl.innerHTML = '<li class="no-tasks-msg">אין משימות עדיין — הוסיפי למטה ✨</li>';
+      return;
+    }
+    [...tasks]
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+      .forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'task-item' + (task.done ? ' done' : '');
+        li.innerHTML = `
+          <div class="task-check${task.done ? ' checked' : ''}" data-id="${task.id}"></div>
+          ${task.time ? `<span class="task-time">${task.time}</span>` : ''}
+          <span class="task-text">${esc(task.text)}</span>
+          <button class="task-delete" data-id="${task.id}" title="מחק">✕</button>`;
+        li.querySelector('.task-check').addEventListener('click', () => toggleTask(task.id));
+        li.querySelector('.task-delete').addEventListener('click', () => deleteTask(task.id));
+        taskListEl.appendChild(li);
+      });
+  }
+
+  function addTask(time, text) {
+    getDayTasks(currentDay).push({ id: Date.now().toString(), time, text, done: false });
+    saveJournal(journal);
+    renderTasks();
+    refreshBadge(currentDay);
+  }
+
+  function toggleTask(id) {
+    const t = getDayTasks(currentDay).find(t => t.id === id);
+    if (t) { t.done = !t.done; saveJournal(journal); renderTasks(); }
+  }
+
+  function deleteTask(id) {
+    journal[currentDay] = getDayTasks(currentDay).filter(t => t.id !== id);
+    saveJournal(journal);
+    renderTasks();
+    refreshBadge(currentDay);
+  }
+
+  document.getElementById('btn-add').addEventListener('click', () => {
+    const text = inputText.value.trim();
+    if (!text) { inputText.focus(); return; }
+    addTask(inputTime.value, text);
+    inputText.value = '';
+    inputTime.value = '';
+    inputText.focus();
+  });
+  inputText.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-add').click(); });
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // ===== NOTIFICATIONS =====
+
+  // 1. בקש הרשאה להתראות מערכת
+  let notifPermission = 'default';
+  if ('Notification' in window) {
+    notifPermission = Notification.permission;
+    if (notifPermission === 'default') {
+      Notification.requestPermission().then(p => { notifPermission = p; });
+    }
+  }
+
+  // 2. Toast על המסך
+  function showToast(title, text, time) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.style.position = 'relative';
+    toast.innerHTML = `
+      <button class="toast-close" title="סגור">✕</button>
+      <div class="toast-title">⏰ ${title}</div>
+      <div class="toast-body">
+        <span class="toast-icon">💍</span>
+        <div class="toast-text">
+          ${esc(text)}
+          ${time ? `<div class="toast-time">${time}</div>` : ''}
+        </div>
+      </div>
+      <div class="toast-progress"></div>`;
+
+    toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
+    toastContainer.appendChild(toast);
+
+    // נעלם אוטומטית אחרי 15 שניות
+    setTimeout(() => dismissToast(toast), 15000);
+  }
+
+  function dismissToast(toast) {
+    if (!toast.parentNode) return;
+    toast.classList.add('hiding');
+    toast.addEventListener('animationend', () => toast.remove(), { once: true });
+  }
+
+  // 3. התראת מערכת
+  function showSystemNotif(text, time) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    new Notification('💍 תזכורת חתונה', {
+      body: time ? `${time} — ${text}` : text,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💍</text></svg>',
+      tag: 'wedding-reminder-' + Date.now(),
+      requireInteraction: true
+    });
+  }
+
+  // 4. שלח את כל ההתראות ביחד
+  let titleFlashInterval = null;
+
+  function flashTitle(text) {
+    const original = document.title;
+    let toggle = false;
+    if (titleFlashInterval) clearInterval(titleFlashInterval);
+    titleFlashInterval = setInterval(() => {
+      document.title = toggle ? `⏰ ${text}` : original;
+      toggle = !toggle;
+    }, 800);
+    // עצור אחרי 30 שניות
+    setTimeout(() => {
+      clearInterval(titleFlashInterval);
+      document.title = original;
+    }, 30000);
+  }
+
+  function playBeep() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const notes = [523, 659, 784]; // C5 E5 G5
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.18);
+        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + i * 0.18 + 0.05);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + i * 0.18 + 0.25);
+        osc.start(ctx.currentTime + i * 0.18);
+        osc.stop(ctx.currentTime + i * 0.18 + 0.3);
+      });
+    } catch(e) {}
+  }
+
+  function fireReminder(task) {
+    const label = `תזכורת ליום ${task.day}`;
+    showToast(label, task.text, task.time);
+    showSystemNotif(task.text, task.time);
+    flashTitle(task.text);
+    playBeep();
+  }
+
+  // 5. טיימר — בודק כל 15 שניות אם יש משימה בשעה הזו
+  const firedReminders = new Set(); // מונע כפילות באותה דקה
+
+  function checkReminders() {
+    // קרא תמיד את הנתונים הכי עדכניים
+    const freshJournal = loadJournal();
+    const now = new Date();
+    const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+    let fired = 0;
+    Object.entries(freshJournal).forEach(([day, tasks]) => {
+      tasks.forEach(task => {
+        if (!task.time || task.done) return;
+        const key = `${day}-${task.id}-${nowStr}`;
+        if (task.time === nowStr && !firedReminders.has(key)) {
+          firedReminders.add(key);
+          fireReminder({ day, text: task.text, time: task.time });
+          fired++;
+        }
+      });
+    });
+    console.log(`[תזכורות] בדיקה בשעה ${nowStr} — נשלחו: ${fired}`);
+  }
+
+  // חשוף לקונסול לבדיקה
+  window.checkReminders = checkReminders;
+  window.showToast = showToast;
+  window.testToast = () => showToast('בדיקה', 'זו הודעת בדיקה!', new Date().toTimeString().slice(0,5));
+
+  checkReminders();
+  setInterval(checkReminders, 15000);
+
+  // ===== SERVICE WORKER =====
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        console.log('[SW] נרשם בהצלחה:', reg.scope);
+        window._swReg = reg;
+
+        // בקש הרשאת Push אם עוד לא
+        if (Notification.permission === 'default') {
+          Notification.requestPermission().then(p => {
+            if (p === 'granted') showToast('התראות הופעלו! 🎉', 'תקבלי התראות גם כשהדפדפן מוזער', '');
+          });
+        }
+      })
+      .catch(err => console.warn('[SW] רישום נכשל:', err));
+  }
+
+  // שלח בדיקה ל-SW כל דקה
+  const swFired = new Set();
+
+  function swCheckReminders() {
+    if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+    const freshJournal = loadJournal();
+    const now = new Date();
+    const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+    // בנה רשימת מפתחות שכבר ירו (מונע כפילויות)
+    const firedList = [...swFired];
+
+    navigator.serviceWorker.controller.postMessage({
+      type: 'CHECK_REMINDERS',
+      journal: freshJournal,
+      nowStr,
+      fired: firedList
+    });
+
+    // סמן כירו
+    Object.entries(freshJournal).forEach(([day, tasks]) => {
+      if (!Array.isArray(tasks)) return;
+      tasks.forEach(task => {
+        if (task.time === nowStr && !task.done) {
+          swFired.add(`${day}-${task.id}-${task.time}`);
+        }
+      });
+    });
+  }
+
+  // בדיקת SW כל 30 שניות (מקבילה לבדיקה המקומית)
+  setInterval(swCheckReminders, 30000);
+
+  // פתח חלון בלחיצה על התראת SW
+  navigator.serviceWorker && navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'OPEN_APP') window.focus();
+  });
+
+  // כפתור בדיקה מהקונסול
+  window.testSwNotif = () => {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'TEST_NOTIF' });
+    } else {
+      alert('SW לא פעיל — נסה רק מ-https://');
+    }
+  };
+
+</script>
+<div id="toast-container"></div>
+
 </body>
 </html>
