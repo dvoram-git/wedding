@@ -593,6 +593,21 @@
   }
   .task-delete:hover { color: #c05030; }
 
+  .task-actions {
+    display: flex; gap: 4px; flex-shrink: 0;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .task-item:hover .task-actions { opacity: 1; }
+
+  .task-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.9rem; padding: 2px 4px; border-radius: 4px;
+    transition: background 0.15s; line-height: 1;
+  }
+  .task-btn:hover { background: rgba(200,168,75,0.15); }
+
+  .task-item.snoozed .task-time { color: #7a9a50; }
+
   .no-tasks-msg {
     text-align: center; color: #4a3820;
     font-size: 0.8rem; padding: 10px 0; font-style: italic;
@@ -954,8 +969,22 @@
       <button class="modal-close" id="modal-close-btn" aria-label="סגור">✕</button>
     </div>
     <ul class="task-list" id="task-list"></ul>
+    <div id="past-day-warning" style="
+      display:none; align-items:center; gap:8px;
+      background:rgba(200,100,0,0.12);
+      border:1px solid rgba(200,120,0,0.3);
+      border-radius:7px; padding:7px 12px;
+      color:#c8904a; font-size:0.8rem;
+      margin-bottom:10px; direction:rtl;
+    "></div>
     <form class="add-task-form" onsubmit="return false;">
-      <input type="time" id="input-time" />
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <input type="time" id="input-time" />
+        <span id="input-time-hint" style="
+          font-size:0.7rem; color:#c8a84b; direction:rtl;
+          min-height:1em; text-align:center; letter-spacing:0.3px;
+        "></span>
+      </div>
       <input type="text" id="input-text" placeholder="תיאור המשימה..." maxlength="80" />
       <button class="btn-add" id="btn-add">+ הוסף</button>
     </form>
@@ -1011,9 +1040,41 @@
 
   function openJournal(dayNum) {
     currentDay = dayNum;
+
+    // חשב טווח התאריכים של היום
+    const { start, end } = getWeddingDayRange(dayNum);
+    const fmt = d => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    const startTime = '18:30';
+    const endTime   = '18:29';
+    const rangeStr  = `${fmt(start)} ${startTime} – ${fmt(new Date(end.getTime() + 60000))} ${endTime}`;
+
     modalTitle.textContent = `יומן – יום ${dayNum}`;
+    modalTitle.title = rangeStr; // tooltip
+
+    // הוסף שורת טווח מתחת לכותרת
+    let rangeEl = document.getElementById('modal-day-range');
+    if (!rangeEl) {
+      rangeEl = document.createElement('div');
+      rangeEl.id = 'modal-day-range';
+      rangeEl.style.cssText = `
+        font-size:0.72rem; color:#6a5030; margin-top:3px;
+        letter-spacing:0.5px; direction:rtl;`;
+      modalTitle.parentNode.insertBefore(rangeEl, modalTitle.nextSibling);
+    }
+    rangeEl.textContent = rangeStr;
+
     renderTasks();
     overlay.classList.add('open');
+
+    // בדוק אם היום עבר לפי מחזור 18:30
+    const pastWarning = document.getElementById('past-day-warning');
+    if (end < new Date()) {
+      pastWarning.style.display = 'flex';
+      pastWarning.textContent = `⚠️ יום ${dayNum} כבר עבר — משימות חדשות לא יתריעו`;
+    } else {
+      pastWarning.style.display = 'none';
+    }
+
     setTimeout(() => inputText.focus(), 60);
   }
 
@@ -1039,16 +1100,137 @@
       .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
       .forEach(task => {
         const li = document.createElement('li');
-        li.className = 'task-item' + (task.done ? ' done' : '');
+        li.className = 'task-item' + (task.done ? ' done' : '') + (task.snoozed ? ' snoozed' : '');
+        li.dataset.id = task.id;
         li.innerHTML = `
           <div class="task-check${task.done ? ' checked' : ''}" data-id="${task.id}"></div>
-          ${task.time ? `<span class="task-time">${task.time}</span>` : ''}
+          ${task.time ? `<span class="task-time">${task.time}${task.snoozed ? ' 💤' : ''}</span>` : ''}
           <span class="task-text">${esc(task.text)}</span>
-          <button class="task-delete" data-id="${task.id}" title="מחק">✕</button>`;
-        li.querySelector('.task-check').addEventListener('click', () => toggleTask(task.id));
+          <div class="task-actions">
+            <button class="task-btn task-edit"  title="ערוך">✏️</button>
+            <button class="task-btn task-snooze" title="דחה">💤</button>
+            <button class="task-btn task-delete" title="מחק">🗑️</button>
+          </div>`;
+
+        li.querySelector('.task-check') .addEventListener('click', () => toggleTask(task.id));
+        li.querySelector('.task-edit')  .addEventListener('click', () => startEditTask(li, task));
+        li.querySelector('.task-snooze').addEventListener('click', () => showSnoozePanel(li, task));
         li.querySelector('.task-delete').addEventListener('click', () => deleteTask(task.id));
         taskListEl.appendChild(li);
       });
+  }
+
+  // ===== EDIT INLINE =====
+  function startEditTask(li, task) {
+    li.innerHTML = `
+      <input type="time" class="edit-time" value="${task.time || ''}"
+        style="width:95px;padding:5px 8px;border:1px solid rgba(200,168,75,0.4);border-radius:6px;
+               background:rgba(255,255,255,0.06);color:#f0e0c0;font-family:'Heebo',sans-serif;font-size:0.85rem;direction:ltr;"/>
+      <input type="text" class="edit-text" value="${task.text}" maxlength="80"
+        style="flex:1;padding:5px 10px;border:1px solid rgba(200,168,75,0.4);border-radius:6px;
+               background:rgba(255,255,255,0.06);color:#f0e0c0;font-family:'Heebo',sans-serif;font-size:0.85rem;"/>
+      <button class="task-btn edit-save"   title="שמור">✓</button>
+      <button class="task-btn edit-cancel" title="בטל">✕</button>`;
+
+    li.style.alignItems = 'center';
+    li.style.gap = '8px';
+    li.style.display = 'flex';
+
+    const editText = li.querySelector('.edit-text');
+    const editTime = li.querySelector('.edit-time');
+    editText.focus();
+    editText.setSelectionRange(editText.value.length, editText.value.length);
+
+    const save = () => {
+      const newText = editText.value.trim();
+      if (!newText) { editText.focus(); return; }
+      const t = getDayTasks(currentDay).find(t => t.id === task.id);
+      if (t) {
+        const oldTime = t.time;
+        t.text = newText;
+        t.time = editTime.value;
+        t.dismissed = false; // אפשר להתריע שוב
+        t.snoozed = false;
+        // סנכרן firedReminders — חסום שעה ישנה, שחרר שעה חדשה
+        if (oldTime !== t.time) {
+          firedReminders.add(`${currentDay}-${t.id}-${oldTime}`);
+          firedReminders.delete(`${currentDay}-${t.id}-${t.time}`);
+          swFired.add(`${currentDay}-${t.id}-${oldTime}`);
+        }
+        saveJournal(journal);
+      }
+      renderTasks();
+      refreshBadge(currentDay);
+    };
+
+    li.querySelector('.edit-save')  .addEventListener('click', save);
+    li.querySelector('.edit-cancel').addEventListener('click', () => renderTasks());
+    editText.addEventListener('keydown', e => {
+      if (e.key === 'Enter') save();
+      if (e.key === 'Escape') renderTasks();
+    });
+  }
+
+  // ===== SNOOZE PANEL =====
+  function showSnoozePanel(li, task) {
+    // סגור פאנל קיים אם פתוח
+    document.querySelectorAll('.snooze-panel').forEach(p => p.remove());
+
+    const panel = document.createElement('div');
+    panel.className = 'snooze-panel';
+    panel.style.cssText = `
+      position:absolute; left:0; right:0; top:100%;
+      background:linear-gradient(135deg,#1e160a,#2a1e0e);
+      border:1px solid rgba(200,168,75,0.35);
+      border-radius:0 0 8px 8px; padding:10px 12px;
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+      z-index:100; direction:rtl;`;
+    panel.innerHTML = `
+      <span style="color:#c8a84b;font-size:0.8rem;font-weight:700;">💤 דחה ל:</span>
+      <button class="snooze-opt" data-min="10">+10 דק׳</button>
+      <button class="snooze-opt" data-min="30">+30 דק׳</button>
+      <button class="snooze-opt" data-min="60">+שעה</button>
+      <button class="snooze-opt" data-min="120">+2 שעות</button>
+      <button class="snooze-cancel" style="margin-right:auto;background:none;border:none;
+        color:#6a4020;cursor:pointer;font-size:0.9rem;">✕</button>`;
+
+    li.style.position = 'relative';
+    li.appendChild(panel);
+
+    panel.querySelectorAll('.snooze-opt').forEach(btn => {
+      btn.style.cssText = `background:rgba(200,168,75,0.15);color:#c8a84b;
+        border:1px solid rgba(200,168,75,0.3);border-radius:5px;
+        padding:4px 10px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:0.8rem;`;
+      btn.addEventListener('click', () => {
+        const mins = parseInt(btn.dataset.min);
+        snoozeTask(task, mins);
+        panel.remove();
+      });
+    });
+    panel.querySelector('.snooze-cancel').addEventListener('click', () => panel.remove());
+  }
+
+  function snoozeTask(task, minutes) {
+    const t = getDayTasks(currentDay).find(t => t.id === task.id);
+    if (!t) return;
+    const oldTime = t.time;
+    const base = t.time ? new Date(`2000-01-01T${t.time}`) : new Date();
+    base.setMinutes(base.getMinutes() + minutes);
+    t.time = String(base.getHours()).padStart(2,'0') + ':' + String(base.getMinutes()).padStart(2,'0');
+    t.dismissed = false;
+    t.snoozed = true;
+    saveJournal(journal);
+
+    // סנכרן את firedReminders: הוסף את המפתח הישן (לא יירה שוב),
+    // הסר את המפתח החדש אם קיים (כדי שהתראה תופיע בשעה החדשה)
+    const nowStr = String(new Date().getHours()).padStart(2,'0') + ':' + String(new Date().getMinutes()).padStart(2,'0');
+    firedReminders.add(`${currentDay}-${t.id}-${oldTime}`);    // חסום את השעה הישנה
+    firedReminders.delete(`${currentDay}-${t.id}-${t.time}`);  // שחרר את השעה החדשה
+    swFired.add(`${currentDay}-${t.id}-${oldTime}`);           // גם ב-SW
+
+    renderTasks();
+    refreshBadge(currentDay);
+    showToast('נדחה 💤', `"${task.text}" נדחה ל-${t.time}`, '');
   }
 
   function addTask(time, text) {
@@ -1056,6 +1238,22 @@
     saveJournal(journal);
     renderTasks();
     refreshBadge(currentDay);
+
+    // אם השעה אחרי 18:29 — הצג תאריך מדויק כדי שהמשתמש ידע בדיוק מתי
+    if (time && time >= '18:30') {
+      const { start } = getWeddingDayRange(currentDay);
+      // start = יום ושעה שבו מתחיל "יום currentDay" (18:30)
+      // משימה בשעה >= 18:30 שייכת ל-start עצמו
+      const taskDate = new Date(start);
+      const [h, m] = time.split(':').map(Number);
+      taskDate.setHours(h, m, 0, 0);
+      const dateStr = taskDate.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+      showToast(
+        `📌 יום ${currentDay}`,
+        `המשימה נקבעה ל${dateStr} בשעה ${time}`,
+        ''
+      );
+    }
   }
 
   function toggleTask(id) {
@@ -1076,9 +1274,25 @@
     addTask(inputTime.value, text);
     inputText.value = '';
     inputTime.value = '';
+    document.getElementById('input-time-hint').textContent = '';
     inputText.focus();
   });
   inputText.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('btn-add').click(); });
+
+  // הצג תאריך מדויק כשבוחרים שעה
+  inputTime.addEventListener('input', () => {
+    const hint = document.getElementById('input-time-hint');
+    if (!inputTime.value || currentDay === null) { hint.textContent = ''; return; }
+    const { start } = getWeddingDayRange(currentDay);
+    const [h, m] = inputTime.value.split(':').map(Number);
+    const taskDate = new Date(start);
+    taskDate.setHours(h, m, 0, 0);
+    // שעות לפני 18:30 שייכות ליום המחרת (היום הגרגוריאני הבא)
+    if (h < 18 || (h === 18 && m < 30)) {
+      taskDate.setDate(taskDate.getDate() + 1);
+    }
+    hint.textContent = taskDate.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
+  });
 
   function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -1255,17 +1469,69 @@
     if (t && !t.done) { t.dismissed = true; saveJournal(j); journal = j; }
   }
 
+  // ===== לוגיקת יום חתונה (מחזור 18:30–18:29) =====
+  const WEDDING_DAY = new Date('2026-08-09T18:30:00'); // החתונה
+
+  /**
+   * השוואת ימים קלנדריים ללא תלות בשעת קיץ/חורף (DST).
+   * מחשב את מספר הימים בין שתי נקודות זמן לפי תאריך בלוח,
+   * ולא לפי מילישניות, כדי לא להיפגע ממעברי שעון.
+   */
+  function calendarDaysBetween(a, b) {
+    const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.round((utcB - utcA) / 86400000);
+  }
+
+  /**
+   * מחזיר את מספר "יום החתונה" הנוכחי לפי מחזור 18:30.
+   * יום N מתחיל ב-18:30 של N ימים לפני החתונה
+   * ומסתיים ב-18:29 של N-1 ימים לפני.
+   * מחזיר null אם לא בטווח 1–30.
+   */
+  function getCurrentWeddingDay() {
+    const now = new Date();
+    // אם לפני 18:30 — עדיין ב"יום" של אתמול בערב
+    const refDate = new Date(now);
+    if (now.getHours() < 18 || (now.getHours() === 18 && now.getMinutes() < 30)) {
+      refDate.setDate(refDate.getDate() - 1);
+    }
+    // השווה ימים קלנדריים בלבד (ניטרול DST)
+    const weddingDate = new Date(WEDDING_DAY);
+    const diff = calendarDaysBetween(refDate, weddingDate);
+    if (diff < 1 || diff > 30) return null;
+    return diff;
+  }
+
+  /**
+   * בהינתן מספר יום (1–30) מחזיר את טווח ה-Date שלו.
+   * { start: Date(18:30 של N ימים לפני), end: Date(18:29 של N-1 ימים לפני) }
+   */
+  function getWeddingDayRange(dayNum) {
+    // חישוב לפי תאריך קלנדרי — N ימים לפני יום החתונה
+    const weddingDate = new Date(WEDDING_DAY);
+    const start = new Date(weddingDate);
+    start.setDate(start.getDate() - dayNum);
+    start.setHours(18, 30, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    end.setHours(18, 29, 0, 0);
+    return { start, end };
+  }
+
   // 5. טיימר — בודק כל 15 שניות אם יש משימה בשעה הזו
-  const firedReminders = new Set(); // מונע כפילות באותה דקה
+  const firedReminders = new Set();
 
   function checkReminders() {
-    // קרא תמיד את הנתונים הכי עדכניים
     const freshJournal = loadJournal();
     const now = new Date();
     const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const currentDay = getCurrentWeddingDay(); // היום הנוכחי לפי מחזור 18:30
 
     let fired = 0;
     Object.entries(freshJournal).forEach(([day, tasks]) => {
+      // רק התרה לימים שבמחזור הנוכחי
+      if (parseInt(day) !== currentDay) return;
       tasks.forEach(task => {
         if (!task.time || task.done) return;
         const key = `${day}-${task.id}-${nowStr}`;
@@ -1276,7 +1542,7 @@
         }
       });
     });
-    console.log(`[תזכורות] בדיקה בשעה ${nowStr} — נשלחו: ${fired}`);
+    console.log(`[תזכורות] בדיקה בשעה ${nowStr} (יום ${currentDay}) — נשלחו: ${fired}`);
   }
 
   // חשוף לקונסול לבדיקה
@@ -1289,18 +1555,37 @@
 
   // ===== משימות שפוספסו =====
   function checkMissedTasks() {
+    // אל תציג באנר כשמודל היומן פתוח — זה מבלבל
+    if (document.getElementById('modal-overlay')?.classList.contains('open')) return;
     const freshJournal = loadJournal();
     journal = freshJournal;
 
     const now = new Date();
     const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const currentWeddingDay = getCurrentWeddingDay();
     const missed = [];
 
     Object.entries(freshJournal).forEach(([day, tasks]) => {
       if (!Array.isArray(tasks)) return;
+      const dayNum = parseInt(day);
+      const { start, end } = getWeddingDayRange(dayNum);
+
       tasks.forEach(task => {
         if (!task.time || task.done || task.dismissed) return;
-        if (task.time < nowStr) missed.push({ day, ...task });
+
+        // בנה תאריך מלא של המשימה בתוך הטווח של היום שלה
+        const taskDate = new Date(start);
+        const [h, m] = task.time.split(':').map(Number);
+        taskDate.setHours(h, m, 0, 0);
+        // אם השעה לפני 18:30 — המשימה שייכת ל"מחרת" (יום לאחר start)
+        if (h < 18 || (h === 18 && m < 30)) {
+          taskDate.setDate(taskDate.getDate() + 1);
+        }
+
+        // פוספסה אם תאריך המשימה המלא כבר עבר
+        if (taskDate < now) {
+          missed.push({ day, ...task });
+        }
       });
     });
 
@@ -1432,6 +1717,98 @@
 
   // בדוק פספוסים בטעינה (עם עיכוב קצר כדי שהדף יטען)
   setTimeout(checkMissedTasks, 1500);
+
+  // ===== ONBOARDING — מוצג פעם אחת בלבד =====
+  const ONBOARDING_KEY = 'aviTal_onboarding_v1';
+  if (!localStorage.getItem(ONBOARDING_KEY)) {
+    setTimeout(() => {
+      const ob = document.createElement('div');
+      ob.id = 'onboarding-overlay';
+      ob.style.cssText = `
+        position:fixed; inset:0;
+        background:rgba(5,3,0,0.82);
+        z-index:3000;
+        display:flex; align-items:center; justify-content:center;
+        backdrop-filter:blur(5px);
+        animation:toastIn 0.4s cubic-bezier(.4,0,.2,1) forwards;
+      `;
+      ob.innerHTML = `
+        <div style="
+          background:linear-gradient(160deg,#1e160a,#2a1e0e);
+          border:1px solid rgba(200,168,75,0.45);
+          border-top-color:rgba(255,248,160,0.6);
+          border-radius:16px;
+          padding:28px 30px 24px;
+          width:min(460px,92vw);
+          direction:rtl;
+          box-shadow:0 0 60px rgba(245,180,40,0.18), 0 20px 60px rgba(0,0,0,0.7);
+          font-family:'Heebo',sans-serif;
+          color:#f0e0c0;
+        ">
+          <!-- כותרת -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;
+                      border-bottom:1px solid rgba(200,168,75,0.2);padding-bottom:14px;">
+            <span style="font-size:1.8rem;">📋</span>
+            <div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:600;
+                          background:linear-gradient(135deg,#f5d98b,#c8860a);
+                          -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                          background-clip:text;">יומן משימות</div>
+              <div style="font-size:0.72rem;color:#6a5030;letter-spacing:1px;margin-top:2px;">
+                פיצ׳ר חדש — כל נורה היא יום
+              </div>
+            </div>
+          </div>
+
+          <!-- הסבר -->
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px;font-size:0.88rem;line-height:1.7;color:#c8a870;">
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">💡</span>
+              <span><strong style="color:#f5d98b;">לחצי על כל נורה</strong> כדי לפתוח את היומן של אותו יום ולהוסיף משימות, תזכורות או הערות.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">⏰</span>
+              <span><strong style="color:#f5d98b;">הגדירי שעה למשימה</strong> — כשמגיע הזמן תקבלי התראה אוטומטית, גם אם הדפדפן מוזער.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">📅</span>
+              <span>כל יום מתחיל ב-<strong style="color:#f5d98b;">18:30</strong> ומסתיים ב-18:29 למחרת. בחירת שעה תציג את <strong style="color:#f5d98b;">התאריך המדויק</strong> כדי שלא תתבלבלי.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">🔢</span>
+              <span>מספר קטן על הנורה מראה <strong style="color:#f5d98b;">כמה משימות פתוחות</strong> ביום הזה.</span>
+            </div>
+
+          </div>
+
+          <!-- כפתור -->
+          <button id="onboarding-close" style="
+            width:100%;
+            padding:10px;
+            background:linear-gradient(135deg,#c8a84b,#8a6020);
+            color:#fff8d0; border:none; border-radius:8px;
+            cursor:pointer; font-family:'Heebo',sans-serif;
+            font-size:0.95rem; font-weight:700;
+            transition:filter 0.15s;
+          ">הבנתי, בואו נתחיל! ✨</button>
+        </div>`;
+
+      document.body.appendChild(ob);
+
+      const close = () => {
+        ob.style.animation = 'toastOut 0.3s cubic-bezier(.4,0,.2,1) forwards';
+        ob.addEventListener('animationend', () => ob.remove(), { once: true });
+        localStorage.setItem(ONBOARDING_KEY, '1');
+      };
+
+      document.getElementById('onboarding-close').addEventListener('click', close);
+      ob.addEventListener('click', e => { if (e.target === ob) close(); });
+    }, 800);
+  }
 
   // בדוק גם כשחוזרים לטאב
   document.addEventListener('visibilitychange', () => {
