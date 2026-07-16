@@ -737,6 +737,8 @@
 </head>
 <body>
 
+<div id="toast-container"></div>
+
 <header>
   <div class="logo">דוד &amp; אביטל</div>
   <h1 id="title">טוענת...</h1>
@@ -827,7 +829,7 @@
 
   document.addEventListener('mousemove', e => {
     const now = Date.now();
-    if (now - lastSparkle < 40) return;
+    if (now - lastSparkle < 80) return;
     lastSparkle = now;
 
     const el = document.createElement('span');
@@ -1148,9 +1150,20 @@
     }, 30000);
   }
 
+  // AudioContext — נוצר בלחיצה ראשונה כדי לעקוף חסימת Autoplay
+  let _audioCtx = null;
+  document.addEventListener('click', () => {
+    if (!_audioCtx) {
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (_audioCtx && _audioCtx.state === 'suspended') _audioCtx.resume();
+  }, { once: false });
+
   function playBeep() {
+    if (!_audioCtx) return; // לא ניתן לנגן לפני אינטראקציה
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = _audioCtx;
+      if (ctx.state === 'suspended') ctx.resume();
       const notes = [523, 659, 784]; // C5 E5 G5
       notes.forEach((freq, i) => {
         const osc = ctx.createOscillator();
@@ -1225,16 +1238,18 @@
       .catch(err => console.warn('[SW] רישום נכשל:', err));
   }
 
-  // שלח בדיקה ל-SW כל דקה
+  // שלח בדיקה ל-SW רק כשהדף מוסתר (minimize/tab switch)
+  // כשהדף גלוי — checkReminders() המקומי כבר מטפל
   const swFired = new Set();
 
   function swCheckReminders() {
+    // אם הדף גלוי — לא צריך SW, המקומי מספיק
+    if (!document.hidden) return;
     if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+
     const freshJournal = loadJournal();
     const now = new Date();
     const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-
-    // בנה רשימת מפתחות שכבר ירו (מונע כפילויות)
     const firedList = [...swFired];
 
     navigator.serviceWorker.controller.postMessage({
@@ -1244,18 +1259,16 @@
       fired: firedList
     });
 
-    // סמן כירו
+    // סמן כירו כדי שגם checkReminders() לא יכפיל
     Object.entries(freshJournal).forEach(([day, tasks]) => {
       if (!Array.isArray(tasks)) return;
       tasks.forEach(task => {
-        if (task.time === nowStr && !task.done) {
+        if (task.time === nowStr && !task.done)
           swFired.add(`${day}-${task.id}-${task.time}`);
-        }
       });
     });
   }
 
-  // בדיקת SW כל 30 שניות (מקבילה לבדיקה המקומית)
   setInterval(swCheckReminders, 30000);
 
   // פתח חלון בלחיצה על התראת SW
@@ -1273,7 +1286,5 @@
   };
 
 </script>
-<div id="toast-container"></div>
-
 </body>
 </html>
