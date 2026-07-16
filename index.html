@@ -980,6 +980,10 @@
     b.classList.toggle('visible', n > 0);
   }
 
+  function refreshAllBadges() {
+    Object.keys(journal).forEach(day => refreshBadge(Number(day)));
+  }
+
   // add badge span + click listener to every bulb-wrap
   document.querySelectorAll('.bulb-wrap').forEach(wrap => {
     const daySpan = wrap.querySelector('.bulb-day');
@@ -1183,10 +1187,72 @@
 
   function fireReminder(task) {
     const label = `תזכורת ליום ${task.day}`;
-    showToast(label, task.text, task.time);
+    showReminderToast(label, task);
     showSystemNotif(task.text, task.time);
     flashTitle(task.text);
     playBeep();
+  }
+
+  function showReminderToast(title, task) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.style.position = 'relative';
+    toast.innerHTML = `
+      <div class="toast-title">⏰ ${title}</div>
+      <div class="toast-body">
+        <span class="toast-icon">💍</span>
+        <div class="toast-text">
+          ${esc(task.text)}
+          ${task.time ? `<div class="toast-time">${task.time}</div>` : ''}
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; justify-content:flex-end">
+        <button class="btn-done-toast" style="
+          background:linear-gradient(135deg,#c8a84b,#8a6020);
+          color:#fff8d0; border:none; border-radius:6px;
+          padding:5px 14px; cursor:pointer; font-family:'Heebo',sans-serif;
+          font-size:0.82rem; font-weight:700;">בוצע ✓</button>
+        <button class="btn-dismiss-toast" style="
+          background:rgba(255,255,255,0.07); color:#a08060;
+          border:1px solid rgba(200,168,75,0.3); border-radius:6px;
+          padding:5px 14px; cursor:pointer; font-family:'Heebo',sans-serif;
+          font-size:0.82rem;">התעלם</button>
+      </div>
+      <div class="toast-progress"></div>`;
+
+    // בוצע — סמן done
+    toast.querySelector('.btn-done-toast').addEventListener('click', () => {
+      const j = loadJournal();
+      const t = (j[task.day] || []).find(t => t.id === task.id);
+      if (t) { t.done = true; saveJournal(j); journal = j; refreshAllBadges(); }
+      dismissToast(toast);
+      showToast('עודכן ✓', `"${task.text}" סומן כבוצע`, '');
+    });
+
+    // התעלם — סמן dismissed
+    toast.querySelector('.btn-dismiss-toast').addEventListener('click', () => {
+      autoDismissTask(task);
+      dismissToast(toast);
+    });
+
+    toastContainer.appendChild(toast);
+
+    // נסגר אוטומטית → dismissed
+    const timer = setTimeout(() => {
+      autoDismissTask(task);
+      dismissToast(toast);
+    }, 15000);
+
+    // אם לחץ בוצע/התעלם ידנית — בטל את ה-auto
+    toast.addEventListener('click', () => clearTimeout(timer), { once: true });
+  }
+
+  function autoDismissTask(task) {
+    const j = loadJournal();
+    const t = (j[task.day] || []).find(t => t.id === task.id);
+    if (t && !t.done) { t.dismissed = true; saveJournal(j); journal = j; }
   }
 
   // 5. טיימר — בודק כל 15 שניות אם יש משימה בשעה הזו
@@ -1220,6 +1286,161 @@
 
   checkReminders();
   setInterval(checkReminders, 15000);
+
+  // ===== משימות שפוספסו =====
+  function checkMissedTasks() {
+    const freshJournal = loadJournal();
+    journal = freshJournal;
+
+    const now = new Date();
+    const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const missed = [];
+
+    Object.entries(freshJournal).forEach(([day, tasks]) => {
+      if (!Array.isArray(tasks)) return;
+      tasks.forEach(task => {
+        if (!task.time || task.done || task.dismissed) return;
+        if (task.time < nowStr) missed.push({ day, ...task });
+      });
+    });
+
+    if (missed.length === 0) return;
+    missed.sort((a, b) => b.time.localeCompare(a.time));
+
+    const banner = document.createElement('div');
+    banner.id = 'missed-banner';
+    banner.style.cssText = `
+      position:fixed; top:16px; left:50%; transform:translateX(-50%);
+      z-index:9998; direction:rtl; text-align:right;
+      background:linear-gradient(135deg,#1e160a,#2a1e0e);
+      border:2px solid rgba(200,100,50,0.7);
+      border-top-color:rgba(255,160,80,0.8);
+      border-radius:14px; padding:16px 20px;
+      color:#f0e0c0; font-family:'Heebo',sans-serif;
+      font-size:clamp(0.82rem,1.8vh,1rem);
+      box-shadow:0 0 30px rgba(200,80,0,0.3),0 8px 30px rgba(0,0,0,0.6);
+      max-width:min(480px,94vw); min-width:min(320px,88vw);
+      max-height:80vh; overflow-y:auto;
+      animation:toastIn 0.4s cubic-bezier(.4,0,.2,1) forwards;
+    `;
+
+    // כותרת + כפתור סגירה
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+    header.innerHTML = `
+      <span style="font-weight:700;color:#f5a050;font-size:0.9rem;letter-spacing:1px">
+        ⚠️ פספסת ${missed.length} משימה${missed.length > 1 ? 'ות' : ''}
+      </span>
+      <button id="banner-close-x" style="background:none;border:none;color:#6a4020;font-size:1.1rem;cursor:pointer;">✕</button>`;
+    banner.appendChild(header);
+
+    // שורה לכל משימה
+    const taskContainer = document.createElement('div');
+    missed.forEach(task => {
+      const row = document.createElement('div');
+      row.dataset.taskId = task.id;
+      row.dataset.taskDay = task.day;
+      row.style.cssText = `
+        display:flex; align-items:center; gap:8px;
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(200,168,75,0.15);
+        border-radius:8px; padding:8px 10px; margin-bottom:7px;`;
+      row.innerHTML = `
+        <div style="flex:1;min-width:0;">
+          <span style="color:#c8a84b;font-weight:700;font-size:0.78rem;">${task.time}</span>
+          <span style="color:#8a7040;font-size:0.75rem;margin-right:4px;">יום ${task.day}</span>
+          <div style="color:#f0e0c0;font-size:0.88rem;margin-top:2px;word-break:break-word;">${esc(task.text)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+          <button class="row-done" style="
+            background:linear-gradient(135deg,#5a8a20,#3a5a10);
+            color:#d0f0a0;border:none;border-radius:5px;
+            padding:4px 10px;cursor:pointer;font-family:'Heebo',sans-serif;
+            font-size:0.75rem;font-weight:700;white-space:nowrap;">✓ בוצע</button>
+          <button class="row-dismiss" style="
+            background:rgba(255,255,255,0.06);color:#8a7040;
+            border:1px solid rgba(200,168,75,0.25);border-radius:5px;
+            padding:4px 10px;cursor:pointer;font-family:'Heebo',sans-serif;
+            font-size:0.75rem;white-space:nowrap;">התעלם</button>
+        </div>`;
+
+      row.querySelector('.row-done').addEventListener('click', () => {
+        updateTaskField(task.day, task.id, 'done', true);
+        row.style.opacity = '0.4';
+        row.style.pointerEvents = 'none';
+        checkIfBannerEmpty(banner, taskContainer);
+      });
+
+      row.querySelector('.row-dismiss').addEventListener('click', () => {
+        updateTaskField(task.day, task.id, 'dismissed', true);
+        row.style.opacity = '0.4';
+        row.style.pointerEvents = 'none';
+        checkIfBannerEmpty(banner, taskContainer);
+      });
+
+      taskContainer.appendChild(row);
+    });
+    banner.appendChild(taskContainer);
+
+    // כפתורי bulk בתחתית
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display:flex;gap:8px;justify-content:flex-end;margin-top:10px;border-top:1px solid rgba(200,168,75,0.15);padding-top:10px;';
+    footer.innerHTML = `
+      <button id="banner-done-all" style="
+        background:linear-gradient(135deg,#8a4010,#5a2808);
+        color:#f0d0a0;border:none;border-radius:6px;
+        padding:6px 14px;cursor:pointer;font-family:'Heebo',sans-serif;
+        font-size:0.8rem;font-weight:700;">סמן הכל כבוצע ✓</button>
+      <button id="banner-dismiss-all" style="
+        background:rgba(255,255,255,0.07);color:#a08060;
+        border:1px solid rgba(200,168,75,0.3);border-radius:6px;
+        padding:6px 14px;cursor:pointer;font-family:'Heebo',sans-serif;
+        font-size:0.8rem;">התעלם מהכל</button>`;
+    banner.appendChild(footer);
+    document.body.appendChild(banner);
+
+    // event listeners
+    banner.querySelector('#banner-close-x').addEventListener('click', () => banner.remove());
+
+    banner.querySelector('#banner-done-all').addEventListener('click', () => {
+      missed.forEach(t => updateTaskField(t.day, t.id, 'done', true));
+      refreshAllBadges();
+      banner.remove();
+      showToast('עודכן ✓', 'כל המשימות סומנו כבוצעות', '');
+    });
+
+    banner.querySelector('#banner-dismiss-all').addEventListener('click', () => {
+      missed.forEach(t => updateTaskField(t.day, t.id, 'dismissed', true));
+      banner.remove();
+    });
+  }
+
+  function updateTaskField(day, id, field, value) {
+    const j = loadJournal();
+    const t = (j[day] || []).find(t => t.id === id);
+    if (t) { t[field] = value; saveJournal(j); journal = j; }
+    if (field === 'done') refreshAllBadges();
+  }
+
+  function checkIfBannerEmpty(banner, container) {
+    const active = container.querySelectorAll('[style*="pointer-events: none"]');
+    const total  = container.querySelectorAll('[data-task-id]');
+    if (active.length >= total.length) {
+      setTimeout(() => banner.remove(), 600);
+    }
+  }
+
+  // בדוק פספוסים בטעינה (עם עיכוב קצר כדי שהדף יטען)
+  setTimeout(checkMissedTasks, 1500);
+
+  // בדוק גם כשחוזרים לטאב
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      // הסר בנר ישן אם קיים
+      document.getElementById('missed-banner')?.remove();
+      setTimeout(checkMissedTasks, 300);
+    }
+  });
 
   // ===== SERVICE WORKER =====
   if ('serviceWorker' in navigator) {
