@@ -51,6 +51,7 @@ function checkAndNotify(journal, nowStr, fired) {
   });
 }
 
+
 // ===== לחיצה על התראה =====
 self.addEventListener('notificationclick', e => {
   e.notification.close();
