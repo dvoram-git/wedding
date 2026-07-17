@@ -770,7 +770,7 @@
 </footer>
 
 <script>
-  const WEDDING = new Date('2026-08-09T00:00:00');
+  const WEDDING = new Date(2026, 7, 9); // אוגוסט = חודש 7 (0-indexed) — תמיד שעון מקומי
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   WEDDING.setHours(0, 0, 0, 0);
@@ -818,7 +818,7 @@
   document.body.prepend(svgDefs);
 
   // ספירה לאחור בזמן אמתי
-  const WEDDING_TIME = new Date('2026-08-09T18:30:00');
+  const WEDDING_TIME = new Date(2026, 7, 9, 18, 30, 0); // תמיד שעון מקומי
   const pad = n => String(n).padStart(2, '0');
 
   function updateTimer() {
@@ -938,7 +938,7 @@
     const isLit   = daysLeft > 0 && day <= 30 && day >= daysLeft;
     const isToday = daysLeft > 0 && daysLeft <= 30 && day === daysLeft;
 
-    const bulbDate = new Date('2026-08-09T12:00:00');
+    const bulbDate = new Date(2026, 7, 9, 12, 0, 0); // תמיד שעון מקומי
     bulbDate.setDate(bulbDate.getDate() - day);
     const heDate = hebrewDate(bulbDate);
 
@@ -1043,10 +1043,12 @@
 
     // חשב טווח התאריכים של היום
     const { start, end } = getWeddingDayRange(dayNum);
-    const fmt = d => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    const fmtGreg = d => d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' });
+    const fmtWeekday = d => d.toLocaleDateString('he-IL', { weekday: 'long' });
     const startTime = '18:30';
     const endTime   = '18:29';
-    const rangeStr  = `${fmt(start)} ${startTime} – ${fmt(new Date(end.getTime() + 60000))} ${endTime}`;
+    const endDisplay = new Date(end.getTime() + 60000); // 18:30 = start של יום הבא → 18:29 נכון
+    const rangeStr  = `${fmtWeekday(start)} ${fmtGreg(start)} ${hebrewDate(start)} ${startTime} – ${fmtWeekday(endDisplay)} ${fmtGreg(endDisplay)} ${hebrewDate(endDisplay)} ${endTime}`;
 
     modalTitle.textContent = `יומן – יום ${dayNum}`;
     modalTitle.title = rangeStr; // tooltip
@@ -1126,7 +1128,7 @@
       <input type="time" class="edit-time" value="${task.time || ''}"
         style="width:95px;padding:5px 8px;border:1px solid rgba(200,168,75,0.4);border-radius:6px;
                background:rgba(255,255,255,0.06);color:#f0e0c0;font-family:'Heebo',sans-serif;font-size:0.85rem;direction:ltr;"/>
-      <input type="text" class="edit-text" value="${task.text}" maxlength="80"
+      <input type="text" class="edit-text" value="${esc(task.text)}" maxlength="80"
         style="flex:1;padding:5px 10px;border:1px solid rgba(200,168,75,0.4);border-radius:6px;
                background:rgba(255,255,255,0.06);color:#f0e0c0;font-family:'Heebo',sans-serif;font-size:0.85rem;"/>
       <button class="task-btn edit-save"   title="שמור">✓</button>
@@ -1156,6 +1158,7 @@
           firedReminders.add(`${currentDay}-${t.id}-${oldTime}`);
           firedReminders.delete(`${currentDay}-${t.id}-${t.time}`);
           swFired.add(`${currentDay}-${t.id}-${oldTime}`);
+          swFired.delete(`${currentDay}-${t.id}-${t.time}`);
         }
         saveJournal(journal);
       }
@@ -1240,13 +1243,15 @@
     refreshBadge(currentDay);
 
     // אם השעה אחרי 18:29 — הצג תאריך מדויק כדי שהמשתמש ידע בדיוק מתי
-    if (time && time >= '18:30') {
+    if (time) {
       const { start } = getWeddingDayRange(currentDay);
-      // start = יום ושעה שבו מתחיל "יום currentDay" (18:30)
-      // משימה בשעה >= 18:30 שייכת ל-start עצמו
       const taskDate = new Date(start);
       const [h, m] = time.split(':').map(Number);
       taskDate.setHours(h, m, 0, 0);
+      // שעה לפני 18:30 שייכת ל"מחרת start" (היום הגרגוריאני הבא)
+      if (h < 18 || (h === 18 && m < 30)) {
+        taskDate.setDate(taskDate.getDate() + 1);
+      }
       const dateStr = taskDate.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' });
       showToast(
         `📌 יום ${currentDay}`,
@@ -1470,7 +1475,7 @@
   }
 
   // ===== לוגיקת יום חתונה (מחזור 18:30–18:29) =====
-  const WEDDING_DAY = new Date('2026-08-09T18:30:00'); // החתונה
+  const WEDDING_DAY = new Date(2026, 7, 9, 18, 30, 0); // החתונה — תמיד שעון מקומי
 
   /**
    * השוואת ימים קלנדריים ללא תלות בשעת קיץ/חורף (DST).
@@ -1508,13 +1513,15 @@
    * { start: Date(18:30 של N ימים לפני), end: Date(18:29 של N-1 ימים לפני) }
    */
   function getWeddingDayRange(dayNum) {
-    // חישוב לפי תאריך קלנדרי — N ימים לפני יום החתונה
+    // נורה N נדלקת ב-18:30 של (N+1) ימים לפני יום החתונה (9.8)
+    // ונכבית ב-18:29 של N ימים לפני יום החתונה.
+    // דוגמה: נורה 23 → start = 9.8 - 24 ימים = 16.7 18:30, end = 9.8 - 23 ימים = 17.7 18:29
     const weddingDate = new Date(WEDDING_DAY);
     const start = new Date(weddingDate);
-    start.setDate(start.getDate() - dayNum);
+    start.setDate(start.getDate() - (dayNum + 1));
     start.setHours(18, 30, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const end = new Date(weddingDate);
+    end.setDate(end.getDate() - dayNum);
     end.setHours(18, 29, 0, 0);
     return { start, end };
   }
@@ -1527,15 +1534,30 @@
     const now = new Date();
     const nowStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
     const currentDay = getCurrentWeddingDay(); // היום הנוכחי לפי מחזור 18:30
+    if (currentDay === null) return;
+
+    const { start } = getWeddingDayRange(currentDay);
 
     let fired = 0;
     Object.entries(freshJournal).forEach(([day, tasks]) => {
-      // רק התרה לימים שבמחזור הנוכחי
       if (parseInt(day) !== currentDay) return;
       tasks.forEach(task => {
         if (!task.time || task.done) return;
-        const key = `${day}-${task.id}-${nowStr}`;
-        if (task.time === nowStr && !firedReminders.has(key)) {
+
+        // בנה תאריך מלא של המשימה
+        const [h, m] = task.time.split(':').map(Number);
+        const taskDate = new Date(start);
+        taskDate.setHours(h, m, 0, 0);
+        if (h < 18 || (h === 18 && m < 30)) {
+          taskDate.setDate(taskDate.getDate() + 1);
+        }
+
+        // השווה תאריך+שעה מלאים (עם דיוק לדקה)
+        const taskDateStr = taskDate.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
+        const nowDateStr  = now.toISOString().slice(0, 16);
+
+        const key = `${day}-${task.id}-${taskDateStr}`;
+        if (taskDateStr === nowDateStr && !firedReminders.has(key)) {
           firedReminders.add(key);
           fireReminder({ day, text: task.text, time: task.time });
           fired++;
@@ -1781,6 +1803,11 @@
             <div style="display:flex;gap:10px;align-items:flex-start;">
               <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">🔢</span>
               <span>מספר קטן על הנורה מראה <strong style="color:#f5d98b;">כמה משימות פתוחות</strong> ביום הזה.</span>
+            </div>
+
+            <div style="display:flex;gap:10px;align-items:flex-start;">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">💾</span>
+              <span>המשימות נשמרות <strong style="color:#f5d98b;">בדפדפן הזה בלבד</strong> ואינן משותפות בין מכשירים או משתמשים. שימי לב — מחיקת היסטוריית הגלישה או נתוני האתר תמחק גם את כל המשימות.</span>
             </div>
 
           </div>
